@@ -58,7 +58,7 @@ export function DashboardSidebar() {
 		<div className="flex h-screen w-64 flex-col border-r bg-muted/40">
 			<div className="flex h-14 items-center justify-between border-b px-4">
 				<Link href="/dashboard" className="flex items-center space-x-2">
-					<span className="font-bold text-lg">Абрис</span>
+					<span className="font-bold text-lg">BuildPlanner</span>
 				</Link>
 				<ThemeToggleAdvanced />
 			</div>
