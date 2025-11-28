@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Image, Settings, Layers } from "lucide-react";
 import { LayersPanelFigma } from "./LayersPanelFigma";
+import { defaultFloorMaterials } from "@/lib/editor/rooms";
+import type { RoomType, FloorMaterial } from "@/types/plan";
 
 /**
  * Панель свойств для редактирования выбранного объекта
@@ -47,25 +49,33 @@ export function Editor2DPropertiesPanel() {
     }
   };
 
-  const handleRoomWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRoomTypeChange = (value: RoomType) => {
     if (selectedRoom) {
-      const width = parseFloat(e.target.value);
-      if (!isNaN(width) && width > 0) {
-        updateRoom(selectedRoom.id, {
-          size: { ...selectedRoom.size, width },
-        });
+      updateRoom(selectedRoom.id, { roomType: value });
+    }
+  };
+
+  const handleFloorMaterialChange = (materialId: string) => {
+    if (selectedRoom) {
+      const material = defaultFloorMaterials.find((m) => m.id === materialId);
+      if (material) {
+        updateRoom(selectedRoom.id, { floorMaterial: material });
       }
     }
   };
 
-  const handleRoomHeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFloorLevelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (selectedRoom) {
-      const height = parseFloat(e.target.value);
-      if (!isNaN(height) && height > 0) {
-        updateRoom(selectedRoom.id, {
-          size: { ...selectedRoom.size, height },
-        });
+      const level = parseFloat(e.target.value);
+      if (!isNaN(level)) {
+        updateRoom(selectedRoom.id, { floorLevel: level });
       }
+    }
+  };
+
+  const handleLayerChange = (layerId: string) => {
+    if (selectedRoom) {
+      updateRoom(selectedRoom.id, { layerId });
     }
   };
 
@@ -405,98 +415,191 @@ export function Editor2DPropertiesPanel() {
 
   // Если выбрана комната
   if (selectedRoom) {
+    const roomTypeLabels: Record<RoomType, string> = {
+      bedroom: "Спальня",
+      "living-room": "Гостиная",
+      kitchen: "Кухня",
+      bathroom: "Санузел",
+      toilet: "Туалет",
+      corridor: "Коридор",
+      hallway: "Прихожая",
+      balcony: "Балкон",
+      loggia: "Лоджия",
+      storage: "Кладовая",
+      technical: "Тех. помещение",
+      other: "Другое",
+    };
+
     return (
-      <div className="w-80 border-l bg-muted/40 p-4 space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Свойства комнаты</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label
-                htmlFor="room-name"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Название
-              </label>
-              <Input
-                id="room-name"
-                type="text"
-                value={selectedRoom.name}
-                onChange={handleRoomNameChange}
-                className="mt-1.5"
-                placeholder="Название комнаты"
-              />
-            </div>
+      <div className="w-80 border-l bg-muted/40 p-4 space-y-4 overflow-y-auto">
+        <Tabs defaultValue="object" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="object">Объект</TabsTrigger>
+            <TabsTrigger value="floor">Пол</TabsTrigger>
+            <TabsTrigger value="layer">Слой</TabsTrigger>
+          </TabsList>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label
-                  htmlFor="room-width"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Ширина (см)
-                </label>
-                <Input
-                  id="room-width"
-                  type="number"
-                  value={selectedRoom.size.width}
-                  onChange={handleRoomWidthChange}
-                  className="mt-1.5"
-                  min="0"
-                  step="10"
-                />
-              </div>
+          {/* Вкладка "Объект" */}
+          <TabsContent value="object" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Объект</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="room-name"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Название
+                  </label>
+                  <Input
+                    id="room-name"
+                    type="text"
+                    value={selectedRoom.name}
+                    onChange={handleRoomNameChange}
+                    className="mt-1.5"
+                    placeholder="Название комнаты"
+                  />
+                </div>
 
-              <div>
-                <label
-                  htmlFor="room-height"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Высота (см)
-                </label>
-                <Input
-                  id="room-height"
-                  type="number"
-                  value={selectedRoom.size.height}
-                  onChange={handleRoomHeightChange}
-                  className="mt-1.5"
-                  min="0"
-                  step="10"
-                />
-              </div>
-            </div>
+                <div>
+                  <label
+                    htmlFor="room-type"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Назначение
+                  </label>
+                  <select
+                    id="room-type"
+                    value={selectedRoom.roomType}
+                    onChange={(e) => handleRoomTypeChange(e.target.value as RoomType)}
+                    className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {Object.entries(roomTypeLabels).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            <div className="pt-2 border-t">
-              <div className="text-sm text-muted-foreground">
-                <p>
-                  Площадь:{" "}
-                  <span className="font-medium">
-                    {((selectedRoom.size.width * selectedRoom.size.height) /
-                      10000).toFixed(2)}{" "}
-                    м²
-                  </span>
-                </p>
-                <p className="mt-1">
-                  Позиция: X: {Math.round(selectedRoom.position.x)}, Y:{" "}
-                  {Math.round(selectedRoom.position.y)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="pt-2 border-t">
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>
+                      Площадь:{" "}
+                      <span className="font-medium">
+                        {selectedRoom.area.toFixed(2)} м²
+                      </span>
+                    </p>
+                    <p>
+                      Периметр:{" "}
+                      <span className="font-medium">
+                        {selectedRoom.perimeter.toFixed(2)} м
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Подсказка</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Перетаскивайте комнату мышью или меняйте размеры в полях выше.
-              Колесо мыши изменяет масштаб.
-            </p>
-          </CardContent>
-        </Card>
+          {/* Вкладка "Пол" */}
+          <TabsContent value="floor" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Пол</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="floor-material"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Материал пола
+                  </label>
+                  <select
+                    id="floor-material"
+                    value={selectedRoom.floorMaterial?.id || ""}
+                    onChange={(e) => handleFloorMaterialChange(e.target.value)}
+                    className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">Выберите материал</option>
+                    {defaultFloorMaterials.map((material) => (
+                      <option key={material.id} value={material.id}>
+                        {material.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="floor-level"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Уровень пола (мм)
+                  </label>
+                  <Input
+                    id="floor-level"
+                    type="number"
+                    value={selectedRoom.floorLevel}
+                    onChange={handleFloorLevelChange}
+                    className="mt-1.5"
+                    placeholder="0"
+                  />
+                </div>
+
+                {selectedRoom.floorMaterial && (
+                  <div className="pt-2 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      <p>
+                        Цвет:{" "}
+                        <span
+                          className="inline-block w-4 h-4 rounded align-middle"
+                          style={{
+                            backgroundColor: selectedRoom.floorMaterial.color,
+                          }}
+                        />
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Вкладка "Слой" */}
+          <TabsContent value="layer" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Слой</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="room-layer"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Слой
+                  </label>
+                  <select
+                    id="room-layer"
+                    value={selectedRoom.layerId}
+                    onChange={(e) => handleLayerChange(e.target.value)}
+                    className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {plan.layers.map((layer) => (
+                      <option key={layer.id} value={layer.id}>
+                        {layer.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }

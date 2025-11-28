@@ -141,18 +141,195 @@ export type SnapSettings = {
 };
 
 /**
- * Комната на плане
+ * Тип использования комнаты
+ */
+export type RoomType = 
+  | 'bedroom' // спальня
+  | 'living-room' // гостиная
+  | 'kitchen' // кухня
+  | 'bathroom' // санузел
+  | 'toilet' // туалет
+  | 'corridor' // коридор
+  | 'hallway' // прихожая
+  | 'balcony' // балкон
+  | 'loggia' // лоджия
+  | 'storage' // кладовая
+  | 'technical' // тех. помещение
+  | 'other'; // другое
+
+/**
+ * Материал пола
+ */
+export type FloorMaterial = {
+  id: string;
+  name: string; // например, "паркет дуб", "плитка 600×600"
+  color: string; // базовый цвет для отрисовки (hex)
+  textureUrl?: string; // ссылка на текстуру/паттерн (на будущее)
+};
+
+/**
+ * Комната на плане (новая версия - привязана к стенам)
  */
 export type Room = {
   id: string;
   name: string;
-  position: Point; // левый верхний угол
-  size: { width: number; height: number }; // в условных единицах (пиксели)
-  rotation: number; // угол поворота в градусах (пока 0)
+  
+  // Геометрия
+  polygon: Point[]; // замкнутый многоугольник (контур в мировых координатах)
+  wallIds: string[]; // ID стен, которые формируют периметр комнаты
+  
+  // Расчётные параметры
+  area: number; // площадь в м²
+  perimeter: number; // периметр в м
+  
+  // Тип использования
+  roomType: RoomType;
+  
+  // Связь с отделкой пола
+  floorMaterial?: FloorMaterial;
+  floorLevel: number; // уровень пола (чистый пол) по высоте, в мм
+  
+  // Слой
+  layerId: string;
+  
+  // Системные поля
+  geometrySynced: boolean; // флаг, что геометрия синхронизирована со стенами
 };
 
 /**
- * Предмет мебели на плане
+ * Категории мебели
+ */
+export type FurnitureCategory =
+  | 'seating' // сидячие места (диваны, кресла, стулья)
+  | 'sleeping' // кровати
+  | 'storage' // шкафы, комоды, стеллажи
+  | 'tables' // столы
+  | 'kitchen' // кухонные модули
+  | 'bathroom' // санитарное оборудование
+  | 'technical' // оборудование
+  | 'custom'; // пользовательские шаблоны
+
+/**
+ * Тип геометрического представления мебели
+ */
+export type FurnitureGeometryType =
+  | 'rectangle' // прямоугольник
+  | 'l-shaped' // L-образный (угловой диван)
+  | 'complex'; // сложная форма (упрощённая до контура)
+
+/**
+ * Тип привязки мебели
+ */
+export type FurnitureAnchorType =
+  | 'free' // свободно по полу
+  | 'against-wall' // у стены
+  | 'centered-in-room'; // в центре комнаты
+
+/**
+ * Правила позиционирования мебели
+ */
+export type FurniturePositioning = {
+  anchorType: FurnitureAnchorType;
+  allowedRotations: 'any' | '90' | '45'; // любые углы или кратные 90°/45°
+  minDistanceFromWall?: number; // минимальный отступ от стены (мм)
+  minDistanceFromOther?: number; // минимальный отступ от других элементов (мм)
+};
+
+/**
+ * Ограничения размеров мебели
+ */
+export type FurnitureSizeConstraints = {
+  minWidth?: number; // минимальная ширина (мм)
+  maxWidth?: number; // максимальная ширина (мм)
+  minDepth?: number; // минимальная глубина (мм)
+  maxDepth?: number; // максимальная глубина (мм)
+};
+
+/**
+ * Визуальные свойства мебели для 2D отображения
+ */
+export type FurnitureVisualStyle = {
+  fillColor: string; // цвет заливки
+  strokeColor: string; // цвет контура
+  strokeWidth: number; // толщина контура
+  iconType?: string; // тип иконки для условного обозначения
+};
+
+/**
+ * Элемент каталога мебели
+ */
+export type FurnitureCatalogItem = {
+  id: string;
+  name: string; // "Диван 3-местный", "Кровать 160×200"
+  category: FurnitureCategory;
+  
+  // Геометрия по умолчанию
+  defaultSize: {
+    width: number; // ширина (мм)
+    depth: number; // глубина (мм)
+    height?: number; // высота (мм, опционально)
+  };
+  
+  geometryType: FurnitureGeometryType;
+  sizeConstraints?: FurnitureSizeConstraints;
+  
+  // Правила позиционирования
+  positioning: FurniturePositioning;
+  
+  // Визуальные свойства
+  visualStyle: FurnitureVisualStyle;
+  
+  // Теги и совместимость
+  compatibleRoomTypes?: RoomType[]; // подходящие типы комнат
+  
+  // Спецификация для отчётов
+  articleCode?: string; // артикул
+  manufacturer?: string; // производитель
+  collection?: string; // коллекция/серия
+  price?: number; // примерная цена
+};
+
+/**
+ * Экземпляр мебели на плане
+ */
+export type FurnitureInstance = {
+  id: string;
+  catalogItemId: string; // ссылка на элемент каталога
+  
+  // Геометрия и позиционирование
+  position: Point; // точка привязки (anchor point)
+  size: {
+    width: number; // ширина/длина (мм)
+    depth: number; // глубина (мм)
+    height?: number; // высота (мм)
+  };
+  rotation: number; // угол поворота в градусах (0-360)
+  configuration?: string; // вариант конфигурации (левый/правый угол и т.д.)
+  
+  // Принадлежность
+  roomId?: string; // ID комнаты, если предмет внутри комнаты
+  layerId: string; // ID слоя
+  
+  // Семантика и кастомизация
+  customName?: string; // пользовательское имя/подпись
+  articleCode?: string; // может переопределять каталог
+  manufacturer?: string;
+  
+  // Системные поля
+  locked: boolean; // флаг "заблокирован"
+  hidden: boolean; // флаг "невидим"
+  
+  // Статус конфликтов (для будущих проверок)
+  conflicts?: {
+    intersectsWall?: boolean;
+    blocksDoor?: boolean;
+    blocksPassage?: boolean;
+  };
+};
+
+/**
+ * Предмет мебели на плане (легаси, оставляем для совместимости)
+ * @deprecated Используйте FurnitureInstance
  */
 export type FurnitureItem = {
   id: string;
@@ -192,9 +369,11 @@ export type PlanData = {
   doors: Door[];
   windows: Window[];
   
-  // Помещения и мебель (легаси, но оставляем для совместимости)
+  // Помещения и мебель
   rooms: Room[];
-  furniture: FurnitureItem[];
+  furniture: FurnitureItem[]; // легаси, для совместимости
+  furnitureInstances: FurnitureInstance[]; // новая система мебели
+  furnitureCatalog?: FurnitureCatalogItem[]; // каталог мебели (опционально, может быть глобальным)
   
   // Размеры и аннотации
   dimensions: DimensionLine[];
@@ -230,6 +409,15 @@ export const defaultLayers: Layer[] = [
     opacity: 1,
     color: '#1976d2',
     order: 2,
+  },
+  {
+    id: 'layer-rooms',
+    name: 'Комнаты',
+    visible: true,
+    locked: false,
+    opacity: 0.4,
+    color: '#3b82f6',
+    order: 2.5,
   },
   {
     id: 'layer-furniture',
@@ -270,6 +458,8 @@ export const emptyPlan: PlanData = {
   windows: [],
   rooms: [],
   furniture: [],
+  furnitureInstances: [],
+  furnitureCatalog: undefined, // будет загружен отдельно
   dimensions: [],
   layers: [...defaultLayers],
   realWorldSize: {

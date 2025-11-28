@@ -10,6 +10,9 @@ import { WallTool } from './tools/WallTool'
 import { DoorTool } from './tools/DoorTool'
 import { WindowTool } from './tools/WindowTool'
 import { SelectTool } from './tools/SelectTool'
+// TODO: Восстановить функционал инструмента мебель
+import { DimensionTool } from './tools/DimensionTool'
+import { RoomToolEditor } from './tools/RoomToolEditor'
 
 interface CanvasProps {
   width: number
@@ -28,7 +31,7 @@ export function Canvas({ width, height }: CanvasProps) {
   // Состояние для drag
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartPos, setDragStartPos] = useState<Point | null>(null)
-  const draggedObject = useRef<{ type: 'node' | 'door' | 'window'; id: string } | null>(null)
+  const draggedObject = useRef<{ type: 'node' | 'door' | 'window' | 'room' | 'dimension'; id: string } | null>(null)
 
   // Рендеринг
   const render = useCallback(() => {
@@ -54,6 +57,9 @@ export function Canvas({ width, height }: CanvasProps) {
       renderer.renderGrid(state.gridSettings)
     }
 
+    // Рисуем комнаты ПЕРВЫМИ (как фон)
+    renderer.renderRooms(state.rooms, state.layers, state.selection, isDragging)
+
     // Рисуем стены
     renderer.renderWalls(state.walls, state.nodes, state.layers, state.selection, isDragging)
 
@@ -62,6 +68,11 @@ export function Canvas({ width, height }: CanvasProps) {
 
     // Рисуем окна
     renderer.renderWindows(state.windows, state.walls, state.nodes, state.layers, state.selection, isDragging)
+
+    // TODO: Восстановить рендеринг мебели
+
+    // Рисуем размерные линии
+    renderer.renderDimensions(state.dimensions, state.layers, state.selection, isDragging)
 
     // Рисуем узлы (при выделении или в режиме редактирования)
     if (state.activeTool === 'select' || state.activeTool === 'wall') {
@@ -74,6 +85,22 @@ export function Canvas({ width, height }: CanvasProps) {
         state.wallDrawingState.nodes,
         state.nodes,
         currentMouseWorldPos.current
+      )
+    }
+
+    // Рисуем процесс рисования размерной линии
+    if (state.dimensionDrawingState.isDrawing && state.dimensionDrawingState.startPoint) {
+      renderer.renderDimensionDrawing(
+        state.dimensionDrawingState.startPoint,
+        state.dimensionDrawingState.tempEndPoint || currentMouseWorldPos.current
+      )
+    }
+
+    // Рисуем выделение области для комнаты
+    if (state.roomSelectionState.isSelecting && state.roomSelectionState.startPoint && state.roomSelectionState.endPoint) {
+      renderer.renderRoomSelection(
+        state.roomSelectionState.startPoint,
+        state.roomSelectionState.endPoint
       )
     }
 
@@ -135,52 +162,84 @@ export function Canvas({ width, height }: CanvasProps) {
     const snappedPos = getSnappedPosition(worldPos)
 
     // Middle mouse или Shift + Left mouse для pan
-    if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+    // Но не паним, если выделяем комнату
+    if ((e.button === 1 || (e.button === 0 && e.shiftKey)) && state.activeTool !== 'room') {
       isPanning.current = true
       lastMousePos.current = screenPos
       e.preventDefault()
       return
     }
 
-    // Левая кнопка мыши
-    if (e.button === 0) {
-      // Обработка в зависимости от активного инструмента
-      switch (state.activeTool) {
-        case 'wall':
-          WallTool.handleClick(snappedPos.position, state, dispatch)
-          break
-          
-        case 'door':
-          DoorTool.handleClick(worldPos, state, dispatch)
-          break
-          
-        case 'window':
-          WindowTool.handleClick(worldPos, state, dispatch)
-          break
-          
-        case 'select': {
-          // Проверяем, есть ли объект под курсором для drag
-          const clickedObject = SelectTool.findObjectAtPoint(worldPos, state)
-          
-          if (clickedObject) {
-            // Начинаем drag - сохраняем снапшот в истории
-            dispatch({ type: 'START_DRAG' })
-            setIsDragging(true)
-            setDragStartPos(worldPos)
-            draggedObject.current = clickedObject
+      // Левая кнопка мыши
+      if (e.button === 0) {
+        // Обработка в зависимости от активного инструмента
+        switch (state.activeTool) {
+          case 'wall':
+            WallTool.handleClick(snappedPos.position, state, dispatch)
+            break
             
-            // Выделяем объект (если ещё не выделен)
-            if (state.selection.type !== clickedObject.type || state.selection.id !== clickedObject.id) {
+          case 'door':
+            DoorTool.handleClick(worldPos, state, dispatch)
+            break
+            
+          case 'window':
+            WindowTool.handleClick(worldPos, state, dispatch)
+            break
+            
+          case 'select': {
+            // Проверяем, есть ли объект под курсором для drag
+            const clickedObject = SelectTool.findObjectAtPoint(worldPos, state)
+            
+            if (clickedObject) {
+              // Начинаем drag - сохраняем снапшот в истории
+              dispatch({ type: 'START_DRAG' })
+              setIsDragging(true)
+              setDragStartPos(worldPos)
+              draggedObject.current = clickedObject
+              
+              // Выделяем объект (если ещё не выделен)
+              if (state.selection.type !== clickedObject.type || state.selection.id !== clickedObject.id) {
+                SelectTool.handleClick(worldPos, state, dispatch)
+              }
+            } else {
+              // Просто клик для выделения/снятия выделения
               SelectTool.handleClick(worldPos, state, dispatch)
             }
-          } else {
-            // Просто клик для выделения/снятия выделения
-            SelectTool.handleClick(worldPos, state, dispatch)
+            break
           }
-          break
+          
+          case 'dimension':
+            DimensionTool.handleClick(worldPos, state, dispatch)
+            break
+            
+          case 'room': {
+            // Проверяем, есть ли комната под курсором для drag
+            const clickedObject = SelectTool.findObjectAtPoint(worldPos, state)
+            
+            if (clickedObject && clickedObject.type === 'room') {
+              // Начинаем drag комнаты
+              dispatch({ type: 'START_DRAG' })
+              setIsDragging(true)
+              setDragStartPos(worldPos)
+              draggedObject.current = clickedObject
+              
+              // Выделяем комнату (если ещё не выделена)
+              if (state.selection.type !== 'room' || state.selection.id !== clickedObject.id) {
+                SelectTool.handleClick(worldPos, state, dispatch)
+              }
+            } else {
+              // Начинаем выделение области для новой комнаты
+              dispatch({
+                type: 'START_ROOM_SELECTION',
+                startPoint: worldPos,
+              })
+            }
+            break
+          }
+            
+          // TODO: Восстановить функционал инструмента мебель
         }
       }
-    }
   }, [state, dispatch, getSnappedPosition])
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -195,6 +254,26 @@ export function Canvas({ width, height }: CanvasProps) {
 
     const worldPos = screenToWorld(screenPos, state.camera)
     currentMouseWorldPos.current = worldPos
+
+    // Обновляем временную конечную точку при рисовании размерной линии
+    if (state.dimensionDrawingState.isDrawing && state.dimensionDrawingState.startPoint) {
+      dispatch({
+        type: 'UPDATE_DIMENSION_DRAWING',
+        endPoint: worldPos,
+      })
+    }
+
+    // Обновляем выделение области для комнаты (только если не перетаскиваем объект)
+    if (
+      state.roomSelectionState.isSelecting &&
+      state.roomSelectionState.startPoint &&
+      !isDragging
+    ) {
+      dispatch({
+        type: 'UPDATE_ROOM_SELECTION',
+        endPoint: worldPos,
+      })
+    }
 
     // Drag объекта
     if (isDragging && dragStartPos && draggedObject.current) {
@@ -215,8 +294,8 @@ export function Canvas({ width, height }: CanvasProps) {
       return
     }
 
-    // Pan
-    if (isPanning.current) {
+    // Pan (но не во время выделения комнаты)
+    if (isPanning.current && state.activeTool !== 'room') {
       const dx = screenPos.x - lastMousePos.current.x
       const dy = screenPos.y - lastMousePos.current.y
       pan(-dx, -dy)
@@ -233,6 +312,15 @@ export function Canvas({ width, height }: CanvasProps) {
       }
     }
 
+    // Курсор для инструмента комнаты
+    if (state.activeTool === 'room' && canvas) {
+      if (state.roomSelectionState.isSelecting) {
+        canvas.style.cursor = 'crosshair'
+      } else {
+        canvas.style.cursor = 'crosshair'
+      }
+    }
+
     render()
   }, [state, isDragging, dragStartPos, pan, render])
 
@@ -246,7 +334,18 @@ export function Canvas({ width, height }: CanvasProps) {
       setDragStartPos(null)
       draggedObject.current = null
     }
-  }, [isDragging, dispatch])
+
+    // Завершаем выделение области для комнаты
+    if (state.roomSelectionState.isSelecting && state.roomSelectionState.startPoint && state.roomSelectionState.endPoint) {
+      RoomToolEditor.handleSelectionFinish(
+        state.roomSelectionState.startPoint,
+        state.roomSelectionState.endPoint,
+        state,
+        dispatch
+      )
+      dispatch({ type: 'FINISH_ROOM_SELECTION' })
+    }
+  }, [isDragging, state, dispatch])
 
   const handleMouseLeave = useCallback(() => {
     // При выходе курсора за пределы canvas тоже завершаем drag
@@ -256,8 +355,14 @@ export function Canvas({ width, height }: CanvasProps) {
       setDragStartPos(null)
       draggedObject.current = null
     }
+    
+    // Отменяем выделение комнаты при выходе курсора
+    if (state.roomSelectionState.isSelecting) {
+      dispatch({ type: 'CANCEL_ROOM_SELECTION' })
+    }
+    
     isPanning.current = false
-  }, [isDragging, dispatch])
+  }, [isDragging, state, dispatch])
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault()

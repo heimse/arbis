@@ -1,6 +1,6 @@
 // Система истории для Undo/Redo
 
-import type { EditorState, Node, Wall, Door, Window } from '@/types/editor'
+import type { EditorState, Node, Wall, Door, Window, Room, Furniture, Dimension } from '@/types/editor'
 
 // Снапшот состояния для истории
 export type HistorySnapshot = {
@@ -8,6 +8,9 @@ export type HistorySnapshot = {
   walls: Map<string, Wall>
   doors: Map<string, Door>
   windows: Map<string, Window>
+  rooms: Map<string, Room>
+  furniture: Map<string, Furniture>
+  dimensions: Map<string, Dimension>
   timestamp: number
 }
 
@@ -23,6 +26,9 @@ export function createSnapshot(state: EditorState): HistorySnapshot {
     walls: new Map(state.walls),
     doors: new Map(state.doors),
     windows: new Map(state.windows),
+    rooms: new Map(state.rooms),
+    furniture: new Map(state.furniture),
+    dimensions: new Map(state.dimensions),
     timestamp: Date.now(),
   }
 }
@@ -40,6 +46,9 @@ export function restoreSnapshot(
     walls: new Map(snapshot.walls),
     doors: new Map(snapshot.doors),
     windows: new Map(snapshot.windows),
+    rooms: new Map(snapshot.rooms),
+    furniture: new Map(snapshot.furniture),
+    dimensions: new Map(snapshot.dimensions),
   }
 }
 
@@ -60,6 +69,15 @@ export function shouldSaveToHistory(actionType: string): boolean {
     'ADD_WINDOW',
     'UPDATE_WINDOW',
     'DELETE_WINDOW',
+    'ADD_ROOM',
+    'UPDATE_ROOM',
+    'DELETE_ROOM',
+    'ADD_FURNITURE',
+    'UPDATE_FURNITURE',
+    'DELETE_FURNITURE',
+    'ADD_DIMENSION',
+    'UPDATE_DIMENSION',
+    'DELETE_DIMENSION',
   ]
   
   return saveableActions.includes(actionType)

@@ -7,6 +7,9 @@ import type {
   Wall,
   Door,
   Window,
+  Room,
+  Furniture,
+  Dimension,
   Layer,
   Selection,
   Point,
@@ -541,6 +544,296 @@ export class CanvasRenderer {
     ctx.moveTo(screenPos.x, screenPos.y - size)
     ctx.lineTo(screenPos.x, screenPos.y + size)
     ctx.stroke()
+  }
+
+  /**
+   * Рендерит процесс рисования размерной линии
+   */
+  /**
+   * Рендерит выделение области для комнаты
+   */
+  renderRoomSelection(startPoint: Point, endPoint: Point) {
+    const ctx = this.ctx
+
+    const startScreen = worldToScreen(startPoint, this.camera)
+    const endScreen = worldToScreen(endPoint, this.camera)
+
+    const x = Math.min(startScreen.x, endScreen.x)
+    const y = Math.min(startScreen.y, endScreen.y)
+    const width = Math.abs(endScreen.x - startScreen.x)
+    const height = Math.abs(endScreen.y - startScreen.y)
+
+    // Полупрозрачный фон выделения
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.1)'
+    ctx.fillRect(x, y, width, height)
+
+    // Обводка выделения
+    ctx.strokeStyle = '#3b82f6'
+    ctx.lineWidth = 2
+    ctx.setLineDash([5, 5])
+    ctx.strokeRect(x, y, width, height)
+    ctx.setLineDash([])
+  }
+
+  renderDimensionDrawing(startPoint: Point, endPoint: Point) {
+    const ctx = this.ctx
+    const start = worldToScreen(startPoint, this.camera)
+    const end = worldToScreen(endPoint, this.camera)
+
+    // Рисуем временную линию
+    ctx.strokeStyle = '#6366f1'
+    ctx.lineWidth = 2
+    ctx.setLineDash([5, 5])
+
+    ctx.beginPath()
+    ctx.moveTo(start.x, start.y)
+    ctx.lineTo(end.x, end.y)
+    ctx.stroke()
+
+    ctx.setLineDash([])
+  }
+
+  /**
+   * Рендерит комнаты (удалено - используется CanvasRenderer2D)
+   * Старый метод удален, так как теперь используется новая логика с полигонами
+   */
+  /**
+   * Рендерит комнаты
+   */
+  renderRooms(
+    rooms: Map<string, Room>,
+    layers: Map<string, Layer>,
+    selection: Selection,
+    isDragging: boolean = false
+  ) {
+    const ctx = this.ctx
+
+    for (const room of rooms.values()) {
+      const layer = layers.get(room.layerId)
+      if (!layer || !layer.visible) continue
+
+      const isSelected = selection.type === 'room' && selection.id === room.id
+
+      // Полупрозрачность если перетаскиваем
+      if (isSelected && isDragging) {
+        ctx.globalAlpha = 0.7
+      } else {
+        ctx.globalAlpha = 1
+      }
+
+      // Если есть полигон, рендерим его, иначе используем прямоугольник
+      if (room.polygon && room.polygon.length >= 3) {
+        // Рендерим полигон
+        ctx.beginPath()
+        const firstPoint = worldToScreen(room.polygon[0], this.camera)
+        ctx.moveTo(firstPoint.x, firstPoint.y)
+
+        for (let i = 1; i < room.polygon.length; i++) {
+          const point = worldToScreen(room.polygon[i], this.camera)
+          ctx.lineTo(point.x, point.y)
+        }
+        ctx.closePath()
+
+        // Фон комнаты (полупрозрачный для видимости)
+        const fillColor = isSelected 
+          ? 'rgba(59, 130, 246, 0.3)' // синий для выделенной
+          : (this.isDark 
+            ? 'rgba(30, 58, 138, 0.25)' // темно-синий для темной темы
+            : 'rgba(219, 234, 254, 0.4)') // светло-синий для светлой темы
+        
+        ctx.fillStyle = fillColor
+        ctx.fill()
+
+        // Обводка комнаты
+        const strokeColor = isSelected 
+          ? '#2563eb' 
+          : (this.isDark ? '#3b82f6' : '#60a5fa')
+        ctx.strokeStyle = strokeColor
+        ctx.lineWidth = isSelected ? 3 : 2
+        ctx.stroke()
+
+        // Рисуем название комнаты в центре полигона
+        if (room.name) {
+          // Вычисляем центр полигона
+          let centerX = 0
+          let centerY = 0
+          const validPoints = room.polygon.filter((p, i) => i < room.polygon.length - 1) // исключаем последнюю точку если она дублирует первую
+          for (const point of validPoints) {
+            centerX += point.x
+            centerY += point.y
+          }
+          centerX /= validPoints.length
+          centerY /= validPoints.length
+
+          const centerScreen = worldToScreen({ x: centerX, y: centerY }, this.camera)
+          
+          const fontSize = Math.max(12, Math.min(16, 14 * (this.camera.zoom / 50)))
+          ctx.font = `bold ${fontSize}px sans-serif`
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          
+          const text = room.name
+          
+          // Измеряем текст для фона
+          const textMetrics = ctx.measureText(text)
+          const textWidth = textMetrics.width
+          const textHeight = fontSize
+          const padding = 4
+          
+          // Рисуем фон для текста
+          ctx.fillStyle = this.isDark 
+            ? 'rgba(0, 0, 0, 0.7)' 
+            : 'rgba(255, 255, 255, 0.9)'
+          ctx.fillRect(
+            centerScreen.x - textWidth / 2 - padding,
+            centerScreen.y - textHeight / 2 - padding,
+            textWidth + padding * 2,
+            textHeight + padding * 2
+          )
+          
+          // Рисуем текст
+          ctx.fillStyle = this.isDark ? '#ffffff' : '#1f2937'
+          ctx.fillText(text, centerScreen.x, centerScreen.y)
+        }
+      } else {
+        // Рендерим как прямоугольник (старый способ для совместимости)
+        const screenPos = worldToScreen(room.position, this.camera)
+        const screenSize = {
+          width: room.size.width * this.camera.zoom,
+          height: room.size.height * this.camera.zoom,
+        }
+
+        // Пропускаем слишком маленькие комнаты
+        if (screenSize.width < 10 || screenSize.height < 10) continue
+
+        // Фон комнаты
+        const fillColor = isSelected 
+          ? 'rgba(59, 130, 246, 0.3)'
+          : (this.isDark 
+            ? 'rgba(30, 58, 138, 0.25)'
+            : 'rgba(219, 234, 254, 0.4)')
+        
+        ctx.fillStyle = fillColor
+        ctx.fillRect(screenPos.x, screenPos.y, screenSize.width, screenSize.height)
+
+        // Обводка комнаты
+        const strokeColor = isSelected 
+          ? '#2563eb' 
+          : (this.isDark ? '#3b82f6' : '#60a5fa')
+        ctx.strokeStyle = strokeColor
+        ctx.lineWidth = isSelected ? 3 : 2
+        ctx.strokeRect(screenPos.x, screenPos.y, screenSize.width, screenSize.height)
+
+        // Рисуем название комнаты
+        if (room.name && screenSize.width > 30 && screenSize.height > 20) {
+          const fontSize = Math.max(12, Math.min(16, 14 * (this.camera.zoom / 50)))
+          ctx.font = `bold ${fontSize}px sans-serif`
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          
+          const textX = screenPos.x + screenSize.width / 2
+          const textY = screenPos.y + screenSize.height / 2
+          const text = room.name
+          
+          const textMetrics = ctx.measureText(text)
+          const textWidth = textMetrics.width
+          const textHeight = fontSize
+          const padding = 4
+          
+          ctx.fillStyle = this.isDark 
+            ? 'rgba(0, 0, 0, 0.7)' 
+            : 'rgba(255, 255, 255, 0.9)'
+          ctx.fillRect(
+            textX - textWidth / 2 - padding,
+            textY - textHeight / 2 - padding,
+            textWidth + padding * 2,
+            textHeight + padding * 2
+          )
+          
+          ctx.fillStyle = this.isDark ? '#ffffff' : '#1f2937'
+          ctx.fillText(text, textX, textY)
+        }
+      }
+
+      ctx.globalAlpha = 1
+    }
+  }
+
+  /**
+   * Рендерит мебель
+   * TODO: Восстановить функционал инструмента мебель
+   */
+  renderFurniture(
+    furniture: Map<string, Furniture>,
+    layers: Map<string, Layer>,
+    selection: Selection,
+    isDragging: boolean = false
+  ) {
+    // TODO: Восстановить рендеринг мебели
+  }
+
+  /**
+   * Рендерит размерные линии
+   */
+  renderDimensions(
+    dimensions: Map<string, Dimension>,
+    layers: Map<string, Layer>,
+    selection: Selection,
+    isDragging: boolean = false
+  ) {
+    const ctx = this.ctx
+
+    for (const dimension of dimensions.values()) {
+      const layer = layers.get(dimension.layerId)
+      if (!layer || !layer.visible) continue
+
+      const isSelected = selection.type === 'dimension' && selection.id === dimension.id
+      const start = worldToScreen(dimension.startPoint, this.camera)
+      const end = worldToScreen(dimension.endPoint, this.camera)
+
+      // Полупрозрачность если перетаскиваем
+      if (isSelected && isDragging) {
+        ctx.globalAlpha = 0.7
+      }
+
+      ctx.strokeStyle = isSelected ? '#6366f1' : (this.isDark ? '#818cf8' : '#6366f1')
+      ctx.lineWidth = isSelected ? 3 : 2
+
+      // Рисуем основную линию
+      ctx.beginPath()
+      ctx.moveTo(start.x, start.y)
+      ctx.lineTo(end.x, end.y)
+      ctx.stroke()
+
+      // Вычисляем длину для отображения
+      const dx = dimension.endPoint.x - dimension.startPoint.x
+      const dy = dimension.endPoint.y - dimension.startPoint.y
+      const length = Math.sqrt(dx * dx + dy * dy)
+      const text = dimension.text || `${length.toFixed(2)} м`
+
+      const midX = (start.x + end.x) / 2
+      const midY = (start.y + end.y) / 2
+
+      // Фон для текста
+      ctx.fillStyle = this.isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)'
+      ctx.font = '11px sans-serif'
+      const metrics = ctx.measureText(text)
+      const padding = 4
+      ctx.fillRect(
+        midX - metrics.width / 2 - padding,
+        midY - 8,
+        metrics.width + padding * 2,
+        16
+      )
+
+      // Текст
+      ctx.fillStyle = this.isDark ? '#ffffff' : '#1f2937'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(text, midX, midY)
+
+      ctx.globalAlpha = 1
+    }
   }
 }
 

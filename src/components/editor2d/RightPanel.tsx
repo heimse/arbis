@@ -122,6 +122,13 @@ function ObjectProperties() {
 			return <DoorProperties />;
 		case "window":
 			return <WindowProperties />;
+		// TODO: Восстановить функционал инструмента мебель
+		// case "furniture":
+		// 	return <FurnitureProperties />;
+		case "dimension":
+			return <DimensionProperties />;
+		case "room":
+			return <RoomProperties />;
 		default:
 			return null;
 	}
@@ -801,6 +808,383 @@ function WindowProperties() {
 	);
 }
 
+// TODO: Восстановить функционал инструмента мебель
+function FurnitureProperties() {
+	return null;
+}
+
+// Свойства размерной линии
+function DimensionProperties() {
+	const { state, dispatch } = useEditor();
+	const dimension = state.dimensions.get(state.selection.id!);
+
+	if (!dimension) return null;
+
+	// Вычисляем длину
+	const dx = dimension.endPoint.x - dimension.startPoint.x;
+	const dy = dimension.endPoint.y - dimension.startPoint.y;
+	const length = Math.sqrt(dx * dx + dy * dy);
+
+	return (
+		<div className="space-y-4">
+			<h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">
+				Размерная линия
+			</h4>
+
+			{/* Основные параметры */}
+			<div className="space-y-3">
+				<div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+					Основные параметры
+				</div>
+
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Длина (м)
+					</label>
+					<Input
+						type="number"
+						value={length.toFixed(3)}
+						readOnly
+						className="bg-gray-50 dark:bg-gray-900"
+					/>
+				</div>
+
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Смещение (м)
+					</label>
+					<Input
+						type="number"
+						value={dimension.offset.toFixed(2)}
+						onChange={(e) => {
+							const offset = parseFloat(e.target.value) || 0;
+							dispatch({
+								type: "UPDATE_DIMENSION",
+								id: dimension.id,
+								updates: { offset },
+							});
+						}}
+						step="0.1"
+					/>
+				</div>
+
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Текст (опционально)
+					</label>
+					<Input
+						type="text"
+						value={dimension.text || ""}
+						onChange={(e) => {
+							dispatch({
+								type: "UPDATE_DIMENSION",
+								id: dimension.id,
+								updates: { text: e.target.value || undefined },
+							});
+						}}
+						placeholder="Автоматически"
+					/>
+				</div>
+			</div>
+
+			{/* Начальная точка */}
+			<div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+				<div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+					Начальная точка
+				</div>
+
+				<div className="grid grid-cols-2 gap-2">
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							X (м)
+						</label>
+						<Input
+							type="number"
+							value={dimension.startPoint.x.toFixed(3)}
+							onChange={(e) => {
+								const x = parseFloat(e.target.value) || 0;
+								dispatch({
+									type: "UPDATE_DIMENSION",
+									id: dimension.id,
+									updates: {
+										startPoint: { ...dimension.startPoint, x },
+									},
+								});
+							}}
+							step="0.01"
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Y (м)
+						</label>
+						<Input
+							type="number"
+							value={dimension.startPoint.y.toFixed(3)}
+							onChange={(e) => {
+								const y = parseFloat(e.target.value) || 0;
+								dispatch({
+									type: "UPDATE_DIMENSION",
+									id: dimension.id,
+									updates: {
+										startPoint: { ...dimension.startPoint, y },
+									},
+								});
+							}}
+							step="0.01"
+						/>
+					</div>
+				</div>
+			</div>
+
+			{/* Конечная точка */}
+			<div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+				<div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+					Конечная точка
+				</div>
+
+				<div className="grid grid-cols-2 gap-2">
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							X (м)
+						</label>
+						<Input
+							type="number"
+							value={dimension.endPoint.x.toFixed(3)}
+							onChange={(e) => {
+								const x = parseFloat(e.target.value) || 0;
+								dispatch({
+									type: "UPDATE_DIMENSION",
+									id: dimension.id,
+									updates: {
+										endPoint: { ...dimension.endPoint, x },
+									},
+								});
+							}}
+							step="0.01"
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Y (м)
+						</label>
+						<Input
+							type="number"
+							value={dimension.endPoint.y.toFixed(3)}
+							onChange={(e) => {
+								const y = parseFloat(e.target.value) || 0;
+								dispatch({
+									type: "UPDATE_DIMENSION",
+									id: dimension.id,
+									updates: {
+										endPoint: { ...dimension.endPoint, y },
+									},
+								});
+							}}
+							step="0.01"
+						/>
+					</div>
+				</div>
+			</div>
+
+			{/* Информация */}
+			<div className="pt-2 border-t border-gray-200 dark:border-gray-800">
+				<div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+					<div>
+						ID: <span className="font-mono">{dimension.id}</span>
+					</div>
+					<div>
+						Слой:{" "}
+						<span className="font-medium">
+							{state.layers.get(dimension.layerId)?.name || "Неизвестно"}
+						</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+// Свойства комнаты
+function RoomProperties() {
+	const { state, dispatch } = useEditor();
+	const room = state.rooms.get(state.selection.id!);
+
+	if (!room) return null;
+
+	return (
+		<div className="space-y-4">
+			<h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">
+				Комната
+			</h4>
+
+			{/* Основные параметры */}
+			<div className="space-y-3">
+				<div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+					Основные параметры
+				</div>
+
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Название
+					</label>
+					<Input
+						type="text"
+						value={room.name}
+						onChange={(e) => {
+							dispatch({
+								type: "UPDATE_ROOM",
+								id: room.id,
+								updates: { name: e.target.value },
+							});
+						}}
+						placeholder="Название комнаты"
+					/>
+				</div>
+
+				<div className="grid grid-cols-2 gap-2">
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Ширина (м)
+						</label>
+						<Input
+							type="number"
+							value={room.size.width.toFixed(2)}
+							onChange={(e) => {
+								const width = parseFloat(e.target.value) || 0;
+								if (width > 0) {
+									dispatch({
+										type: "UPDATE_ROOM",
+										id: room.id,
+										updates: {
+											size: { ...room.size, width },
+										},
+									});
+								}
+							}}
+							step="0.1"
+							min="0.1"
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Высота (м)
+						</label>
+						<Input
+							type="number"
+							value={room.size.height.toFixed(2)}
+							onChange={(e) => {
+								const height = parseFloat(e.target.value) || 0;
+								if (height > 0) {
+									dispatch({
+										type: "UPDATE_ROOM",
+										id: room.id,
+										updates: {
+											size: { ...room.size, height },
+										},
+									});
+								}
+							}}
+							step="0.1"
+							min="0.1"
+						/>
+					</div>
+				</div>
+
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Угол поворота (°)
+					</label>
+					<Input
+						type="number"
+						value={room.rotation.toFixed(1)}
+						onChange={(e) => {
+							const rotation = parseFloat(e.target.value) || 0;
+							dispatch({
+								type: "UPDATE_ROOM",
+								id: room.id,
+								updates: { rotation },
+							});
+						}}
+						step="1"
+					/>
+				</div>
+			</div>
+
+			{/* Позиция */}
+			<div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+				<div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+					Позиция
+				</div>
+
+				<div className="grid grid-cols-2 gap-2">
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							X (м)
+						</label>
+						<Input
+							type="number"
+							value={room.position.x.toFixed(3)}
+							onChange={(e) => {
+								const x = parseFloat(e.target.value) || 0;
+								dispatch({
+									type: "UPDATE_ROOM",
+									id: room.id,
+									updates: { position: { ...room.position, x } },
+								});
+							}}
+							step="0.01"
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Y (м)
+						</label>
+						<Input
+							type="number"
+							value={room.position.y.toFixed(3)}
+							onChange={(e) => {
+								const y = parseFloat(e.target.value) || 0;
+								dispatch({
+									type: "UPDATE_ROOM",
+									id: room.id,
+									updates: { position: { ...room.position, y } },
+								});
+							}}
+							step="0.01"
+						/>
+					</div>
+				</div>
+			</div>
+
+			{/* Информация */}
+			<div className="pt-2 border-t border-gray-200 dark:border-gray-800">
+				<div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+					<div>
+						ID: <span className="font-mono">{room.id}</span>
+					</div>
+					<div>
+						Слой:{" "}
+						<span className="font-medium">
+							{state.layers.get(room.layerId)?.name || "Неизвестно"}
+						</span>
+					</div>
+					<div>
+						Площадь:{" "}
+						<span className="font-medium">
+							{(room.size.width * room.size.height).toFixed(2)} м²
+						</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 // Настройки плана и сетки
 function PlanSettings() {
 	const { state, dispatch } = useEditor();
@@ -901,7 +1285,7 @@ function PlanSettings() {
 function LayersPanel() {
 	const { state, setSelection, dispatch } = useEditor();
 	const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-		new Set(["walls", "doors", "windows", "nodes"])
+		new Set(["walls", "doors", "windows", "nodes", "rooms", "furniture", "dimensions"])
 	);
 
 	const toggleGroup = (group: string) => {
@@ -915,7 +1299,7 @@ function LayersPanel() {
 	};
 
 	const handleObjectClick = (
-		type: "node" | "wall" | "door" | "window",
+		type: "node" | "wall" | "door" | "window" | "room" | "furniture" | "dimension",
 		id: string
 	) => {
 		setSelection(type, id);
@@ -925,6 +1309,9 @@ function LayersPanel() {
 	const doors = Array.from(state.doors.values());
 	const windows = Array.from(state.windows.values());
 	const nodes = Array.from(state.nodes.values());
+	const rooms = Array.from(state.rooms.values());
+	const furniture = Array.from(state.furniture.values());
+	const dimensions = Array.from(state.dimensions.values());
 
 	return (
 		<div className="flex-1 flex flex-col overflow-hidden">
@@ -1071,11 +1458,119 @@ function LayersPanel() {
 						</div>
 					)}
 
+					{/* Комнаты */}
+					{rooms.length > 0 && (
+						<div>
+							<button
+								onClick={() => toggleGroup("rooms")}
+								className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+							>
+								<ChevronRight
+									size={14}
+									className={`transition-transform ${
+										expandedGroups.has("rooms") ? "rotate-90" : ""
+									}`}
+								/>
+								<Square size={14} />
+								<span>Комнаты ({rooms.length})</span>
+							</button>
+							{expandedGroups.has("rooms") && (
+								<div className="ml-4 mt-1 space-y-0.5">
+									{rooms.map((room, index) => (
+										<LayerItem
+											key={room.id}
+											icon={<Square size={14} />}
+											label={room.name || `Комната ${index + 1}`}
+											isSelected={
+												state.selection.type === "room" &&
+												state.selection.id === room.id
+											}
+											onClick={() => handleObjectClick("room", room.id)}
+										/>
+									))}
+								</div>
+							)}
+						</div>
+					)}
+
+					{/* Мебель */}
+					{furniture.length > 0 && (
+						<div>
+							<button
+								onClick={() => toggleGroup("furniture")}
+								className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+							>
+								<ChevronRight
+									size={14}
+									className={`transition-transform ${
+										expandedGroups.has("furniture") ? "rotate-90" : ""
+									}`}
+								/>
+								<Square size={14} />
+								<span>Мебель ({furniture.length})</span>
+							</button>
+							{expandedGroups.has("furniture") && (
+								<div className="ml-4 mt-1 space-y-0.5">
+									{furniture.map((item, index) => (
+										<LayerItem
+											key={item.id}
+											icon={<Square size={14} />}
+											label={item.type || `Мебель ${index + 1}`}
+											isSelected={
+												state.selection.type === "furniture" &&
+												state.selection.id === item.id
+											}
+											onClick={() => handleObjectClick("furniture", item.id)}
+										/>
+									))}
+								</div>
+							)}
+						</div>
+					)}
+
+					{/* Размеры */}
+					{dimensions.length > 0 && (
+						<div>
+							<button
+								onClick={() => toggleGroup("dimensions")}
+								className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+							>
+								<ChevronRight
+									size={14}
+									className={`transition-transform ${
+										expandedGroups.has("dimensions") ? "rotate-90" : ""
+									}`}
+								/>
+								<Square size={14} />
+								<span>Размеры ({dimensions.length})</span>
+							</button>
+							{expandedGroups.has("dimensions") && (
+								<div className="ml-4 mt-1 space-y-0.5">
+									{dimensions.map((dimension, index) => (
+										<LayerItem
+											key={dimension.id}
+											icon={<Square size={14} />}
+											label={`Размер ${index + 1}`}
+											isSelected={
+												state.selection.type === "dimension" &&
+												state.selection.id === dimension.id
+											}
+											onClick={() => handleObjectClick("dimension", dimension.id)}
+										/>
+									))}
+								</div>
+							)}
+						</div>
+					)}
+
 					{/* Пустое состояние */}
 					{walls.length === 0 &&
 						doors.length === 0 &&
 						windows.length === 0 &&
-						nodes.length === 0 && (
+						nodes.length === 0 &&
+						rooms.length === 0 &&
+						furniture.length === 0 &&
+						dimensions.length === 0 && (
 							<div className="flex items-center justify-center h-32 text-sm text-gray-500 dark:text-gray-400"></div>
 						)}
 				</div>

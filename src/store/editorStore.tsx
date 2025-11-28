@@ -8,6 +8,9 @@ import type {
   Wall,
   Door,
   Window,
+  Room,
+  Furniture,
+  Dimension,
   Layer,
   Selection,
   BackgroundImage,
@@ -23,6 +26,9 @@ import {
   generateWallId,
   generateDoorId,
   generateWindowId,
+  generateRoomId,
+  generateFurnitureId,
+  generateDimensionId,
   DEFAULT_WALL_THICKNESS,
   DEFAULT_DOOR_SIZE,
   DEFAULT_WINDOW_SIZE,
@@ -52,6 +58,15 @@ type EditorAction =
   | { type: 'ADD_WINDOW'; window: Window }
   | { type: 'UPDATE_WINDOW'; id: string; updates: Partial<Window> }
   | { type: 'DELETE_WINDOW'; id: string }
+  | { type: 'ADD_ROOM'; room: Room }
+  | { type: 'UPDATE_ROOM'; id: string; updates: Partial<Room> }
+  | { type: 'DELETE_ROOM'; id: string }
+  | { type: 'ADD_FURNITURE'; furniture: Furniture }
+  | { type: 'UPDATE_FURNITURE'; id: string; updates: Partial<Furniture> }
+  | { type: 'DELETE_FURNITURE'; id: string }
+  | { type: 'ADD_DIMENSION'; dimension: Dimension }
+  | { type: 'UPDATE_DIMENSION'; id: string; updates: Partial<Dimension> }
+  | { type: 'DELETE_DIMENSION'; id: string }
   | { type: 'UPDATE_LAYER'; id: string; updates: Partial<Layer> }
   | { type: 'SET_CAMERA'; camera: Partial<typeof DEFAULT_CAMERA> }
   | { type: 'SET_BACKGROUND'; background: BackgroundImage | null }
@@ -59,6 +74,14 @@ type EditorAction =
   | { type: 'ADD_WALL_NODE'; nodeId: string }
   | { type: 'FINISH_WALL_DRAWING' }
   | { type: 'CANCEL_WALL_DRAWING' }
+  | { type: 'START_DIMENSION_DRAWING'; startPoint: Point }
+  | { type: 'UPDATE_DIMENSION_DRAWING'; endPoint: Point }
+  | { type: 'FINISH_DIMENSION_DRAWING' }
+  | { type: 'CANCEL_DIMENSION_DRAWING' }
+  | { type: 'START_ROOM_SELECTION'; startPoint: Point }
+  | { type: 'UPDATE_ROOM_SELECTION'; endPoint: Point }
+  | { type: 'FINISH_ROOM_SELECTION' }
+  | { type: 'CANCEL_ROOM_SELECTION' }
   | { type: 'START_DRAG' }
   | { type: 'END_DRAG'; cancel?: boolean }
   | { type: 'UNDO' }
@@ -71,6 +94,9 @@ const initialSnapshot = {
   walls: new Map(),
   doors: new Map(),
   windows: new Map(),
+  rooms: new Map(),
+  furniture: new Map(),
+  dimensions: new Map(),
   timestamp: Date.now(),
 }
 
@@ -80,6 +106,9 @@ const initialState: EditorState = {
   walls: new Map(),
   doors: new Map(),
   windows: new Map(),
+  rooms: new Map(),
+  furniture: new Map(),
+  dimensions: new Map(),
   layers: new Map(DEFAULT_LAYERS.map((layer) => [layer.id, layer])),
   planSettings: DEFAULT_PLAN_SETTINGS,
   gridSettings: DEFAULT_GRID_SETTINGS,
@@ -91,6 +120,16 @@ const initialState: EditorState = {
   wallDrawingState: {
     isDrawing: false,
     nodes: [],
+  },
+  dimensionDrawingState: {
+    isDrawing: false,
+    startPoint: null,
+    tempEndPoint: null,
+  },
+  roomSelectionState: {
+    isSelecting: false,
+    startPoint: null,
+    endPoint: null,
   },
   isDragging: false,
   history: [initialSnapshot],
@@ -125,6 +164,16 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         wallDrawingState: {
           isDrawing: false,
           nodes: [],
+        },
+        dimensionDrawingState: {
+          isDrawing: false,
+          startPoint: null,
+          tempEndPoint: null,
+        },
+        roomSelectionState: {
+          isSelecting: false,
+          startPoint: null,
+          endPoint: null,
         },
       }
 
@@ -299,6 +348,96 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       }
     }
 
+    case 'ADD_ROOM': {
+      const newRooms = new Map(newState.rooms)
+      newRooms.set(action.room.id, action.room)
+      return {
+        ...newState,
+        rooms: newRooms,
+      }
+    }
+
+    case 'UPDATE_ROOM': {
+      const room = newState.rooms.get(action.id)
+      if (!room) return newState
+
+      const newRooms = new Map(newState.rooms)
+      newRooms.set(action.id, { ...room, ...action.updates })
+      return {
+        ...newState,
+        rooms: newRooms,
+      }
+    }
+
+    case 'DELETE_ROOM': {
+      const newRooms = new Map(newState.rooms)
+      newRooms.delete(action.id)
+      return {
+        ...newState,
+        rooms: newRooms,
+      }
+    }
+
+    case 'ADD_FURNITURE': {
+      const newFurniture = new Map(newState.furniture)
+      newFurniture.set(action.furniture.id, action.furniture)
+      return {
+        ...newState,
+        furniture: newFurniture,
+      }
+    }
+
+    case 'UPDATE_FURNITURE': {
+      const furniture = newState.furniture.get(action.id)
+      if (!furniture) return newState
+
+      const newFurniture = new Map(newState.furniture)
+      newFurniture.set(action.id, { ...furniture, ...action.updates })
+      return {
+        ...newState,
+        furniture: newFurniture,
+      }
+    }
+
+    case 'DELETE_FURNITURE': {
+      const newFurniture = new Map(newState.furniture)
+      newFurniture.delete(action.id)
+      return {
+        ...newState,
+        furniture: newFurniture,
+      }
+    }
+
+    case 'ADD_DIMENSION': {
+      const newDimensions = new Map(newState.dimensions)
+      newDimensions.set(action.dimension.id, action.dimension)
+      return {
+        ...newState,
+        dimensions: newDimensions,
+      }
+    }
+
+    case 'UPDATE_DIMENSION': {
+      const dimension = newState.dimensions.get(action.id)
+      if (!dimension) return newState
+
+      const newDimensions = new Map(newState.dimensions)
+      newDimensions.set(action.id, { ...dimension, ...action.updates })
+      return {
+        ...newState,
+        dimensions: newDimensions,
+      }
+    }
+
+    case 'DELETE_DIMENSION': {
+      const newDimensions = new Map(newState.dimensions)
+      newDimensions.delete(action.id)
+      return {
+        ...newState,
+        dimensions: newDimensions,
+      }
+    }
+
     case 'UPDATE_LAYER': {
       const layer = newState.layers.get(action.id)
       if (!layer) return newState
@@ -348,6 +487,66 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         wallDrawingState: {
           isDrawing: false,
           nodes: [],
+        },
+      }
+
+    case 'START_DIMENSION_DRAWING':
+      return {
+        ...newState,
+        dimensionDrawingState: {
+          isDrawing: true,
+          startPoint: action.startPoint,
+          tempEndPoint: null,
+        },
+      }
+
+    case 'UPDATE_DIMENSION_DRAWING':
+      return {
+        ...newState,
+        dimensionDrawingState: {
+          ...newState.dimensionDrawingState,
+          tempEndPoint: action.endPoint,
+        },
+      }
+
+    case 'FINISH_DIMENSION_DRAWING':
+    case 'CANCEL_DIMENSION_DRAWING':
+      return {
+        ...newState,
+        dimensionDrawingState: {
+          isDrawing: false,
+          startPoint: null,
+          tempEndPoint: null,
+        },
+      }
+
+    case 'START_ROOM_SELECTION':
+      return {
+        ...newState,
+        roomSelectionState: {
+          isSelecting: true,
+          startPoint: action.startPoint,
+          endPoint: action.startPoint,
+        },
+      }
+
+    case 'UPDATE_ROOM_SELECTION':
+      return {
+        ...newState,
+        roomSelectionState: {
+          ...newState.roomSelectionState,
+          endPoint: action.endPoint,
+        },
+      }
+
+    case 'FINISH_ROOM_SELECTION':
+    case 'CANCEL_ROOM_SELECTION':
+      return {
+        ...newState,
+        roomSelectionState: {
+          isSelecting: false,
+          startPoint: null,
+          endPoint: null,
         },
       }
 
@@ -544,6 +743,13 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         break
       case 'window':
         dispatch({ type: 'DELETE_WINDOW', id: state.selection.id })
+        break
+      case 'room':
+        dispatch({ type: 'DELETE_ROOM', id: state.selection.id })
+        break
+      // TODO: Восстановить функционал инструмента мебель
+      case 'dimension':
+        dispatch({ type: 'DELETE_DIMENSION', id: state.selection.id })
         break
     }
 

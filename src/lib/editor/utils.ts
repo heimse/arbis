@@ -36,6 +36,27 @@ export function generateWindowId(): string {
 }
 
 /**
+ * Генерирует ID для комнаты
+ */
+export function generateRoomId(): string {
+  return `room-${generateId()}`
+}
+
+/**
+ * Генерирует ID для мебели
+ */
+export function generateFurnitureId(): string {
+  return `furniture-${generateId()}`
+}
+
+/**
+ * Генерирует ID для размерной линии
+ */
+export function generateDimensionId(): string {
+  return `dimension-${generateId()}`
+}
+
+/**
  * Генерирует ID для слоя
  */
 export function generateLayerId(): string {
@@ -46,6 +67,13 @@ export function generateLayerId(): string {
  * Дефолтные слои
  */
 export const DEFAULT_LAYERS = [
+  {
+    id: 'layer-rooms',
+    name: 'Комнаты',
+    visible: true,
+    locked: false,
+    color: '#3b82f6',
+  },
   {
     id: 'layer-walls',
     name: 'Стены',

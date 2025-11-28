@@ -1,17 +1,17 @@
 // Инструмент выделения объектов
 
-import type { Point, EditorState, Node, Wall, Door, Window } from '@/types/editor'
+import type { Point, EditorState, Node, Wall, Door, Window, Furniture, Dimension, Room } from '@/types/editor'
 import { distance, closestPointOnSegment, pointOnWall } from '@/lib/editor/geometry'
 
 export class SelectTool {
   /**
    * Находит объект в точке (для начала drag)
-   * Приоритет: узлы > двери > окна > стены
+   * Приоритет: узлы > двери > окна > стены > мебель > комнаты > размеры
    */
   static findObjectAtPoint(
     position: Point,
     state: EditorState
-  ): { type: 'node' | 'wall' | 'door' | 'window'; id: string } | null {
+  ): { type: 'node' | 'wall' | 'door' | 'window' | 'furniture' | 'room' | 'dimension'; id: string } | null {
     const { nodes, doors, windows, walls } = state
 
     // 1. Проверяем узлы (высший приоритет)
@@ -38,6 +38,20 @@ export class SelectTool {
       return { type: 'wall', id: wall.id }
     }
 
+    // TODO: Восстановить функционал инструмента мебель
+
+    // 6. Проверяем комнаты
+    const room = this.findRoomAtPoint(position, state.rooms)
+    if (room) {
+      return { type: 'room', id: room.id }
+    }
+
+    // 7. Проверяем размерные линии
+    const dimension = this.findDimensionAtPoint(position, state.dimensions)
+    if (dimension) {
+      return { type: 'dimension', id: dimension.id }
+    }
+
     return null
   }
 
@@ -49,7 +63,7 @@ export class SelectTool {
     state: EditorState,
     dispatch: any
   ): boolean {
-    const { nodes, walls, doors, windows } = state
+    const { nodes, walls, doors, windows, furniture, rooms, dimensions } = state
 
     // Сначала проверяем узлы (приоритет)
     const node = this.findNodeAtPoint(position, nodes)
@@ -91,6 +105,28 @@ export class SelectTool {
       return true
     }
 
+    // TODO: Восстановить функционал инструмента мебель
+
+    // Проверяем комнаты
+    const room = this.findRoomAtPoint(position, rooms)
+    if (room) {
+      dispatch({
+        type: 'SET_SELECTION',
+        selection: { type: 'room', id: room.id },
+      })
+      return true
+    }
+
+    // Проверяем размерные линии
+    const dimension = this.findDimensionAtPoint(position, dimensions)
+    if (dimension) {
+      dispatch({
+        type: 'SET_SELECTION',
+        selection: { type: 'dimension', id: dimension.id },
+      })
+      return true
+    }
+
     // Ничего не найдено - снимаем выделение
     dispatch({
       type: 'SET_SELECTION',
@@ -103,7 +139,7 @@ export class SelectTool {
    * Обработка перетаскивания объекта
    */
   static handleDrag(
-    object: { type: 'node' | 'wall' | 'door' | 'window'; id: string },
+    object: { type: 'node' | 'wall' | 'door' | 'window' | 'furniture' | 'room' | 'dimension'; id: string },
     dx: number,
     dy: number,
     currentPos: Point,
@@ -122,6 +158,13 @@ export class SelectTool {
         break
       case 'window':
         this.dragWindow(object.id, currentPos, state, dispatch)
+        break
+      // TODO: Восстановить функционал инструмента мебель
+      case 'room':
+        this.dragRoom(object.id, dx, dy, state, dispatch)
+        break
+      case 'dimension':
+        this.dragDimension(object.id, dx, dy, state, dispatch)
         break
     }
   }
@@ -432,6 +475,204 @@ export class SelectTool {
     }
 
     return null
+  }
+
+  /**
+   * Находит мебель в точке
+   */
+  private static findFurnitureAtPoint(
+    point: Point,
+    furniture: Map<string, Furniture>
+  ): Furniture | null {
+    for (const item of furniture.values()) {
+      const left = item.position.x
+      const right = item.position.x + item.size.width
+      const top = item.position.y
+      const bottom = item.position.y + item.size.height
+
+      if (point.x >= left && point.x <= right && point.y >= top && point.y <= bottom) {
+        return item
+      }
+    }
+    return null
+  }
+
+  /**
+   * Находит комнату в точке
+   */
+  private static findRoomAtPoint(
+    point: Point,
+    rooms: Map<string, Room>
+  ): Room | null {
+    for (const room of rooms.values()) {
+      // Если есть полигон, проверяем точку внутри полигона
+      if (room.polygon && room.polygon.length >= 3) {
+        if (this.isPointInPolygon(point, room.polygon)) {
+          return room
+        }
+      } else {
+        // Иначе проверяем ограничивающий прямоугольник
+        const left = room.position.x
+        const right = room.position.x + room.size.width
+        const top = room.position.y
+        const bottom = room.position.y + room.size.height
+
+        if (point.x >= left && point.x <= right && point.y >= top && point.y <= bottom) {
+          return room
+        }
+      }
+    }
+    return null
+  }
+
+  /**
+   * Проверяет, находится ли точка внутри многоугольника
+   */
+  private static isPointInPolygon(point: Point, polygon: Point[]): boolean {
+    if (polygon.length < 3) return false
+
+    let inside = false
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i].x
+      const yi = polygon[i].y
+      const xj = polygon[j].x
+      const yj = polygon[j].y
+
+      const intersect =
+        yi > point.y !== yj > point.y &&
+        point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi
+
+      if (intersect) inside = !inside
+    }
+
+    return inside
+  }
+
+  /**
+   * Находит размерную линию в точке
+   */
+  private static findDimensionAtPoint(
+    point: Point,
+    dimensions: Map<string, Dimension>
+  ): Dimension | null {
+    const threshold = 0.2 // 20 см
+
+    for (const dimension of dimensions.values()) {
+      // Проверяем расстояние до линии
+      const dx = dimension.endPoint.x - dimension.startPoint.x
+      const dy = dimension.endPoint.y - dimension.startPoint.y
+      const length = Math.sqrt(dx * dx + dy * dy)
+
+      if (length < 0.01) continue // Пропускаем слишком короткие линии
+
+      // Вычисляем расстояние от точки до отрезка
+      const t = Math.max(0, Math.min(1, 
+        ((point.x - dimension.startPoint.x) * dx + (point.y - dimension.startPoint.y) * dy) / (length * length)
+      ))
+
+      const closestPoint = {
+        x: dimension.startPoint.x + t * dx,
+        y: dimension.startPoint.y + t * dy,
+      }
+
+      const dist = distance(point, closestPoint)
+      if (dist <= threshold) {
+        return dimension
+      }
+    }
+    return null
+  }
+
+  /**
+   * Перетаскивание мебели
+   */
+  private static dragFurniture(
+    furnitureId: string,
+    dx: number,
+    dy: number,
+    state: EditorState,
+    dispatch: any
+  ) {
+    const furniture = state.furniture.get(furnitureId)
+    if (!furniture) return
+
+    dispatch({
+      type: 'UPDATE_FURNITURE',
+      id: furnitureId,
+      updates: {
+        position: {
+          x: furniture.position.x + dx,
+          y: furniture.position.y + dy,
+        },
+      },
+    })
+  }
+
+  /**
+   * Перетаскивание комнаты
+   */
+  private static dragRoom(
+    roomId: string,
+    dx: number,
+    dy: number,
+    state: EditorState,
+    dispatch: any
+  ) {
+    const room = state.rooms.get(roomId)
+    if (!room) return
+
+    // Обновляем позицию
+    const newPosition = {
+      x: room.position.x + dx,
+      y: room.position.y + dy,
+    }
+
+    // Обновляем полигон, если он есть
+    const updates: any = {
+      position: newPosition,
+    }
+
+    if (room.polygon && room.polygon.length > 0) {
+      updates.polygon = room.polygon.map((point) => ({
+        x: point.x + dx,
+        y: point.y + dy,
+      }))
+    }
+
+    dispatch({
+      type: 'UPDATE_ROOM',
+      id: roomId,
+      updates,
+    })
+  }
+
+  /**
+   * Перетаскивание размерной линии
+   */
+  private static dragDimension(
+    dimensionId: string,
+    dx: number,
+    dy: number,
+    state: EditorState,
+    dispatch: any
+  ) {
+    const dimension = state.dimensions.get(dimensionId)
+    if (!dimension) return
+
+    dispatch({
+      type: 'UPDATE_DIMENSION',
+      id: dimensionId,
+      updates: {
+        startPoint: {
+          x: dimension.startPoint.x + dx,
+          y: dimension.startPoint.y + dy,
+        },
+        endPoint: {
+          x: dimension.endPoint.x + dx,
+          y: dimension.endPoint.y + dy,
+        },
+      },
+    })
   }
 }
 

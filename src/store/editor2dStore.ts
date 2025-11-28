@@ -23,6 +23,7 @@ import {
   SnapSettings,
 } from '@/types/plan';
 import { createNode, createWall, updateNodeConnections, removeWall } from '@/lib/editor/walls';
+import { findEnclosedArea, createRoom } from '@/lib/editor/rooms';
 
 /**
  * Доступные инструменты редактора
@@ -169,6 +170,14 @@ export type Editor2DState = {
   addFurniture: (position: Point) => void;
   updateFurniture: (id: string, partial: Partial<Omit<FurnitureItem, 'id'>>) => void;
   deleteFurniture: (id: string) => void;
+  
+  // Новая система мебели
+  addFurnitureInstance: (catalogItemId: string, position: Point, roomId?: string) => void;
+  updateFurnitureInstance: (id: string, partial: Partial<Omit<FurnitureInstance, 'id'>>) => void;
+  deleteFurnitureInstance: (id: string) => void;
+  moveFurnitureInstance: (id: string, newPosition: Point) => void;
+  rotateFurnitureInstance: (id: string, deltaRotation: number) => void;
+  resizeFurnitureInstance: (id: string, newSize: { width?: number; depth?: number }) => void;
 
   // Редактирование выбранного
   moveSelected: (delta: Point) => void;
@@ -669,19 +678,36 @@ export const useEditor2DStore = create<Editor2DState>()(
         state.selectedType = null;
       }),
 
-    // ========== КОМНАТЫ (ЛЕГАСИ) ==========
+    // ========== КОМНАТЫ ==========
     addRoom: (position) =>
       set((state) => {
-        const newRoom: Room = {
-          id: nanoid(),
-          name: `Комната ${state.plan.rooms.length + 1}`,
-          position: {
-            x: position.x - 200,
-            y: position.y - 200,
-          },
-          size: { width: 400, height: 400 },
-          rotation: 0,
-        };
+        // Ищем замкнутую область стен, содержащую точку клика
+        const enclosedArea = findEnclosedArea(
+          position,
+          state.plan.walls,
+          state.plan.nodes
+        );
+
+        if (!enclosedArea) {
+          // Не удалось найти замкнутую область
+          // Можно показать уведомление пользователю
+          console.warn('Невозможно создать комнату: замкнутая область не найдена. Проверьте, что стены соединены узлами.');
+          return;
+        }
+
+        // Находим слой для комнат
+        const roomsLayer = state.plan.layers.find((l) => l.id === 'layer-rooms');
+        const layerId = roomsLayer?.id || 'layer-rooms';
+
+        // Создаём комнату
+        const pixelsPerMeter = state.plan.realWorldSize?.pixelsPerMeter || 80;
+        const newRoom = createRoom(
+          enclosedArea.polygon,
+          enclosedArea.wallIds,
+          pixelsPerMeter,
+          layerId
+        );
+
         state.plan.rooms.push(newRoom);
         state.selectedId = newRoom.id;
         state.selectedType = 'room';

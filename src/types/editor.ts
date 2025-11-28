@@ -9,6 +9,9 @@ export type NodeId = string
 export type WallId = string
 export type DoorId = string
 export type WindowId = string
+export type RoomId = string
+export type FurnitureId = string
+export type DimensionId = string
 export type LayerId = string
 
 // Узел (точка соединения стен)
@@ -54,6 +57,38 @@ export type Window = {
   width: number // в мм
   height: number // в мм
   sillHeight: number // высота подоконника в мм
+  layerId: LayerId
+}
+
+// Комната
+export type Room = {
+  id: RoomId
+  name: string
+  position: Point // левый верхний угол в метрах (для ограничивающего прямоугольника)
+  size: { width: number; height: number } // в метрах (для ограничивающего прямоугольника)
+  rotation: number // угол поворота в градусах
+  layerId: LayerId
+  polygon?: Point[] // опциональный полигон комнаты (если комната создана из стен)
+  wallIds?: string[] // опциональный список ID стен, образующих периметр комнаты
+}
+
+// Мебель
+export type Furniture = {
+  id: FurnitureId
+  type: string // тип мебели (например, "sofa", "bed", "table")
+  position: Point // в метрах
+  size: { width: number; height: number } // в метрах
+  rotation: number // угол поворота в градусах
+  layerId: LayerId
+}
+
+// Размерная линия (упрощенная версия)
+export type Dimension = {
+  id: DimensionId
+  startPoint: Point // начальная точка в метрах
+  endPoint: Point // конечная точка в метрах
+  offset: number // смещение от линии в метрах
+  text?: string // пользовательский текст (если не задан, показывается длина)
   layerId: LayerId
 }
 
@@ -114,7 +149,7 @@ export type Camera = {
 
 // Выделение
 export type Selection = {
-  type: 'node' | 'wall' | 'door' | 'window' | null
+  type: 'node' | 'wall' | 'door' | 'window' | 'room' | 'furniture' | 'dimension' | null
   id: string | null
 }
 
@@ -122,6 +157,20 @@ export type Selection = {
 export type WallDrawingState = {
   isDrawing: boolean
   nodes: NodeId[]
+}
+
+// Состояние рисования размерной линии
+export type DimensionDrawingState = {
+  isDrawing: boolean
+  startPoint: Point | null
+  tempEndPoint: Point | null
+}
+
+// Состояние выделения области для комнаты
+export type RoomSelectionState = {
+  isSelecting: boolean
+  startPoint: Point | null
+  endPoint: Point | null
 }
 
 // Единицы измерения
@@ -141,6 +190,9 @@ export type HistorySnapshot = {
   walls: Map<WallId, Wall>
   doors: Map<DoorId, Door>
   windows: Map<WindowId, Window>
+  rooms: Map<RoomId, Room>
+  furniture: Map<FurnitureId, Furniture>
+  dimensions: Map<DimensionId, Dimension>
   timestamp: number
 }
 
@@ -151,6 +203,9 @@ export type EditorState = {
   walls: Map<WallId, Wall>
   doors: Map<DoorId, Door>
   windows: Map<WindowId, Window>
+  rooms: Map<RoomId, Room>
+  furniture: Map<FurnitureId, Furniture>
+  dimensions: Map<DimensionId, Dimension>
   layers: Map<LayerId, Layer>
   
   // Настройки
@@ -164,6 +219,8 @@ export type EditorState = {
   selection: Selection
   camera: Camera
   wallDrawingState: WallDrawingState
+  dimensionDrawingState: DimensionDrawingState
+  roomSelectionState: RoomSelectionState
   isDragging: boolean // Флаг для группировки действий drag
   
   // История
