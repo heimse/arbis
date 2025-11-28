@@ -10,10 +10,12 @@ import {
 	DoorOpen,
 	SquareDashedBottom,
 	Circle,
+	Armchair,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import type { Node, Wall, Door, Window } from "@/types/editor";
+import { FurnitureCatalogPanel } from "./FurnitureCatalogPanel";
 
 export function RightPanel() {
 	const [activeTab, setActiveTab] = useState("properties");
@@ -28,7 +30,14 @@ export function RightPanel() {
 		) {
 			setActiveTab("properties");
 		}
-	}, [state.selection.id, state.selection.type, activeTab]);
+	}, [state.selection.id, state.selection.type]); // Убрали activeTab из зависимостей
+
+	// Автоматически открываем каталог при выборе инструмента мебели
+	React.useEffect(() => {
+		if (state.activeTool === 'furniture' && activeTab !== 'catalog') {
+			setActiveTab("catalog");
+		}
+	}, [state.activeTool]); // Убрали activeTab из зависимостей
 
 	return (
 		<div className="w-80 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 flex flex-col">
@@ -45,12 +54,19 @@ export function RightPanel() {
 				onValueChange={setActiveTab}
 				className="flex-1 flex flex-col min-h-0"
 			>
-				<TabsList className="w-full grid grid-cols-3 gap-0 bg-gray-50 dark:bg-gray-800 rounded-none border-b border-gray-200 dark:border-gray-700 shrink-0">
+				<TabsList className="w-full grid grid-cols-4 gap-0 bg-gray-50 dark:bg-gray-800 rounded-none border-b border-gray-200 dark:border-gray-700 shrink-0">
 					<TabsTrigger
 						value="properties"
 						className="rounded-none data-[state=active]:bg-white dark:data-[state=active]:bg-gray-900"
 					>
 						Свойства
+					</TabsTrigger>
+					<TabsTrigger
+						value="catalog"
+						className="rounded-none data-[state=active]:bg-white dark:data-[state=active]:bg-gray-900"
+					>
+						<Armchair size={14} className="mr-1" />
+						Каталог
 					</TabsTrigger>
 					<TabsTrigger
 						value="layers"
@@ -76,6 +92,14 @@ export function RightPanel() {
 						<div className="flex-1 overflow-y-auto p-4">
 							<ObjectProperties />
 						</div>
+					</TabsContent>
+
+					{/* Каталог мебели */}
+					<TabsContent
+						value="catalog"
+						className="absolute inset-0 flex flex-col overflow-hidden mt-0 data-[state=inactive]:hidden"
+					>
+						<FurnitureCatalogPanel />
 					</TabsContent>
 
 					{/* Слои */}
@@ -122,9 +146,8 @@ function ObjectProperties() {
 			return <DoorProperties />;
 		case "window":
 			return <WindowProperties />;
-		// TODO: Восстановить функционал инструмента мебель
-		// case "furniture":
-		// 	return <FurnitureProperties />;
+		case "furniture":
+			return <FurnitureProperties />;
 		case "dimension":
 			return <DimensionProperties />;
 		case "room":
@@ -808,9 +831,182 @@ function WindowProperties() {
 	);
 }
 
-// TODO: Восстановить функционал инструмента мебель
+// Свойства мебели
 function FurnitureProperties() {
-	return null;
+	const { state, dispatch } = useEditor();
+	const furniture = state.furniture.get(state.selection.id!);
+
+	if (!furniture) return null;
+
+	return (
+		<div className="space-y-4">
+			<h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">
+				Мебель
+			</h4>
+
+			{/* Основные параметры */}
+			<div className="space-y-3">
+				<div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+					Основные параметры
+				</div>
+
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Тип
+					</label>
+					<Input
+						type="text"
+						value={furniture.type}
+						onChange={(e) => {
+							dispatch({
+								type: "UPDATE_FURNITURE",
+								id: furniture.id,
+								updates: { type: e.target.value },
+							});
+						}}
+						placeholder="Тип мебели"
+					/>
+				</div>
+
+				<div className="grid grid-cols-2 gap-2">
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Ширина (м)
+						</label>
+						<Input
+							type="number"
+							value={furniture.size.width.toFixed(3)}
+							onChange={(e) => {
+								const width = parseFloat(e.target.value) || 0;
+								if (width > 0) {
+									dispatch({
+										type: "UPDATE_FURNITURE",
+										id: furniture.id,
+										updates: {
+											size: { ...furniture.size, width },
+										},
+									});
+								}
+							}}
+							step="0.01"
+							min="0.1"
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Высота (м)
+						</label>
+						<Input
+							type="number"
+							value={furniture.size.height.toFixed(3)}
+							onChange={(e) => {
+								const height = parseFloat(e.target.value) || 0;
+								if (height > 0) {
+									dispatch({
+										type: "UPDATE_FURNITURE",
+										id: furniture.id,
+										updates: {
+											size: { ...furniture.size, height },
+										},
+									});
+								}
+							}}
+							step="0.01"
+							min="0.1"
+						/>
+					</div>
+				</div>
+
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Угол поворота (°)
+					</label>
+					<Input
+						type="number"
+						value={furniture.rotation.toFixed(1)}
+						onChange={(e) => {
+							const rotation = parseFloat(e.target.value) || 0;
+							dispatch({
+								type: "UPDATE_FURNITURE",
+								id: furniture.id,
+								updates: { rotation },
+							});
+						}}
+						step="1"
+					/>
+				</div>
+			</div>
+
+			{/* Позиция */}
+			<div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+				<div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+					Позиция
+				</div>
+
+				<div className="grid grid-cols-2 gap-2">
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							X (м)
+						</label>
+						<Input
+							type="number"
+							value={furniture.position.x.toFixed(3)}
+							onChange={(e) => {
+								const x = parseFloat(e.target.value) || 0;
+								dispatch({
+									type: "UPDATE_FURNITURE",
+									id: furniture.id,
+									updates: { position: { ...furniture.position, x } },
+								});
+							}}
+							step="0.01"
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Y (м)
+						</label>
+						<Input
+							type="number"
+							value={furniture.position.y.toFixed(3)}
+							onChange={(e) => {
+								const y = parseFloat(e.target.value) || 0;
+								dispatch({
+									type: "UPDATE_FURNITURE",
+									id: furniture.id,
+									updates: { position: { ...furniture.position, y } },
+								});
+							}}
+							step="0.01"
+						/>
+					</div>
+				</div>
+			</div>
+
+			{/* Информация */}
+			<div className="pt-2 border-t border-gray-200 dark:border-gray-800">
+				<div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+					<div>
+						ID: <span className="font-mono">{furniture.id}</span>
+					</div>
+					<div>
+						Слой:{" "}
+						<span className="font-medium">
+							{state.layers.get(furniture.layerId)?.name || "Неизвестно"}
+						</span>
+					</div>
+					<div>
+						Площадь:{" "}
+						<span className="font-medium">
+							{(furniture.size.width * furniture.size.height).toFixed(2)} м²
+						</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 // Свойства размерной линии

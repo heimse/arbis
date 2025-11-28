@@ -12,6 +12,7 @@ import {
   Point,
   Room,
   FurnitureItem,
+  FurnitureInstance,
   PlanRealWorldSize,
   PlanBackgroundImage,
   WallNode,
@@ -23,7 +24,14 @@ import {
   SnapSettings,
 } from '@/types/plan';
 import { createNode, createWall, updateNodeConnections, removeWall } from '@/lib/editor/walls';
-import { findEnclosedArea, createRoom } from '@/lib/editor/rooms';
+import { findEnclosedArea, createRoom, isPointInPolygon } from '@/lib/editor/rooms';
+import {
+  createFurnitureInstance,
+  findRoomContainingPoint,
+  clampFurnitureSize,
+  clampFurnitureRotation,
+} from '@/lib/editor/furniture';
+import { defaultFurnitureCatalog, findCatalogItem } from '@/lib/editor/furnitureCatalog';
 
 /**
  * Доступные инструменты редактора
@@ -763,6 +771,174 @@ export const useEditor2DStore = create<Editor2DState>()(
         get().pushHistory();
       }),
 
+    // ========== НОВАЯ СИСТЕМА МЕБЕЛИ ==========
+    addFurnitureInstance: (catalogItemId, position, roomId) =>
+      set((state) => {
+        // Инициализируем каталог, если его нет
+        if (!state.plan.furnitureCatalog) {
+          state.plan.furnitureCatalog = defaultFurnitureCatalog;
+        }
+
+        const catalogItem = findCatalogItem(
+          catalogItemId,
+          state.plan.furnitureCatalog
+        );
+        if (!catalogItem) {
+          console.warn(`Каталог мебели не найден: ${catalogItemId}`);
+          return;
+        }
+
+        // Ищем комнату, если roomId не передан
+        let targetRoomId = roomId;
+        if (!targetRoomId) {
+          const containingRoom = findRoomContainingPoint(
+            position,
+            state.plan.rooms
+          );
+          if (containingRoom) {
+            targetRoomId = containingRoom.id;
+          }
+        }
+
+        // Находим слой для мебели
+        const furnitureLayer = state.plan.layers.find(
+          (l) => l.id === 'layer-furniture'
+        );
+        const layerId = furnitureLayer?.id || 'layer-furniture';
+
+        // Создаём экземпляр мебели
+        const instance = createFurnitureInstance(
+          catalogItem,
+          position,
+          targetRoomId,
+          layerId
+        );
+
+        // Инициализируем массив, если его нет
+        if (!state.plan.furnitureInstances) {
+          state.plan.furnitureInstances = [];
+        }
+
+        state.plan.furnitureInstances.push(instance);
+        state.selectedId = instance.id;
+        state.selectedType = 'furniture';
+        get().pushHistory();
+      }),
+
+    updateFurnitureInstance: (id, partial) =>
+      set((state) => {
+        if (!state.plan.furnitureInstances) return;
+
+        const instance = state.plan.furnitureInstances.find((f) => f.id === id);
+        if (!instance) return;
+
+        // Если обновляются размеры - применяем ограничения
+        if (partial.size) {
+          const catalogItem = state.plan.furnitureCatalog
+            ? findCatalogItem(instance.catalogItemId, state.plan.furnitureCatalog)
+            : undefined;
+          if (catalogItem) {
+            partial.size = clampFurnitureSize(
+              {
+                width: partial.size.width ?? instance.size.width,
+                depth: partial.size.depth ?? instance.size.depth,
+              },
+              catalogItem.sizeConstraints
+            );
+          }
+        }
+
+        // Если обновляется угол поворота - применяем ограничения
+        if (partial.rotation !== undefined) {
+          const catalogItem = state.plan.furnitureCatalog
+            ? findCatalogItem(instance.catalogItemId, state.plan.furnitureCatalog)
+            : undefined;
+          if (catalogItem) {
+            partial.rotation = clampFurnitureRotation(
+              partial.rotation,
+              catalogItem.positioning.allowedRotations
+            );
+          }
+        }
+
+        Object.assign(instance, partial);
+        get().pushHistory();
+      }),
+
+    deleteFurnitureInstance: (id) =>
+      set((state) => {
+        if (!state.plan.furnitureInstances) return;
+        state.plan.furnitureInstances = state.plan.furnitureInstances.filter(
+          (f) => f.id !== id
+        );
+        get().pushHistory();
+      }),
+
+    moveFurnitureInstance: (id, newPosition) =>
+      set((state) => {
+        if (!state.plan.furnitureInstances) return;
+
+        const instance = state.plan.furnitureInstances.find((f) => f.id === id);
+        if (!instance || instance.locked) return;
+
+        // Обновляем позицию
+        instance.position = newPosition;
+
+        // Обновляем привязку к комнате
+        const containingRoom = findRoomContainingPoint(
+          newPosition,
+          state.plan.rooms
+        );
+        instance.roomId = containingRoom?.id;
+
+        get().pushHistory();
+      }),
+
+    rotateFurnitureInstance: (id, deltaRotation) =>
+      set((state) => {
+        if (!state.plan.furnitureInstances) return;
+
+        const instance = state.plan.furnitureInstances.find((f) => f.id === id);
+        if (!instance || instance.locked) return;
+
+        const catalogItem = state.plan.furnitureCatalog
+          ? findCatalogItem(instance.catalogItemId, state.plan.furnitureCatalog)
+          : undefined;
+
+        const newRotation = instance.rotation + deltaRotation;
+        instance.rotation = catalogItem
+          ? clampFurnitureRotation(
+              newRotation,
+              catalogItem.positioning.allowedRotations
+            )
+          : newRotation % 360;
+
+        get().pushHistory();
+      }),
+
+    resizeFurnitureInstance: (id, newSize) =>
+      set((state) => {
+        if (!state.plan.furnitureInstances) return;
+
+        const instance = state.plan.furnitureInstances.find((f) => f.id === id);
+        if (!instance || instance.locked) return;
+
+        const catalogItem = state.plan.furnitureCatalog
+          ? findCatalogItem(instance.catalogItemId, state.plan.furnitureCatalog)
+          : undefined;
+
+        const updatedSize = {
+          width: newSize.width ?? instance.size.width,
+          depth: newSize.depth ?? instance.size.depth,
+        };
+
+        instance.size = catalogItem
+          ? clampFurnitureSize(updatedSize, catalogItem.sizeConstraints)
+          : updatedSize;
+
+        get().pushHistory();
+      }),
+
     // ========== РЕДАКТИРОВАНИЕ ВЫБРАННОГО ==========
     moveSelected: (delta) =>
       set((state) => {
@@ -782,6 +958,20 @@ export const useEditor2DStore = create<Editor2DState>()(
             room.position.y += delta.y;
           }
         } else if (selectedType === 'furniture') {
+          // Проверяем новую систему мебели
+          if (state.plan.furnitureInstances) {
+            const furnitureInstance = state.plan.furnitureInstances.find(
+              (f) => f.id === selectedId
+            );
+            if (furnitureInstance && !furnitureInstance.locked) {
+              get().moveFurnitureInstance(selectedId, {
+                x: furnitureInstance.position.x + delta.x,
+                y: furnitureInstance.position.y + delta.y,
+              });
+              return;
+            }
+          }
+          // Легаси мебель
           const furniture = state.plan.furniture.find((f) => f.id === selectedId);
           if (furniture) {
             furniture.position.x += delta.x;
@@ -810,7 +1000,15 @@ export const useEditor2DStore = create<Editor2DState>()(
         } else if (selectedType === 'room') {
           get().deleteRoom(selectedId);
         } else if (selectedType === 'furniture') {
-          get().deleteFurniture(selectedId);
+          // Проверяем новую систему мебели
+          if (
+            state.plan.furnitureInstances &&
+            state.plan.furnitureInstances.find((f) => f.id === selectedId)
+          ) {
+            get().deleteFurnitureInstance(selectedId);
+          } else {
+            get().deleteFurniture(selectedId);
+          }
         }
 
         state.selectedId = null;

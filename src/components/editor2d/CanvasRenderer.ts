@@ -16,6 +16,7 @@ import type {
   NodeId,
 } from '@/types/editor'
 import { worldToScreen, pointOnWall, angleBetween } from '@/lib/editor/geometry'
+import { findCatalogItem } from '@/lib/editor/furnitureCatalog'
 
 export class CanvasRenderer {
   private ctx: CanvasRenderingContext2D
@@ -761,7 +762,6 @@ export class CanvasRenderer {
 
   /**
    * Рендерит мебель
-   * TODO: Восстановить функционал инструмента мебель
    */
   renderFurniture(
     furniture: Map<string, Furniture>,
@@ -769,7 +769,137 @@ export class CanvasRenderer {
     selection: Selection,
     isDragging: boolean = false
   ) {
-    // TODO: Восстановить рендеринг мебели
+    const ctx = this.ctx
+
+    for (const item of furniture.values()) {
+      const layer = layers.get(item.layerId)
+      if (!layer || !layer.visible) continue
+
+      const isSelected = selection.type === 'furniture' && selection.id === item.id
+
+      // Полупрозрачность если перетаскиваем
+      if (isSelected && isDragging) {
+        ctx.globalAlpha = 0.7
+      } else {
+        ctx.globalAlpha = 1
+      }
+
+      const screenPos = worldToScreen(item.position, this.camera)
+      const screenSize = {
+        width: item.size.width * this.camera.zoom,
+        height: item.size.height * this.camera.zoom,
+      }
+
+      // Пропускаем слишком маленькие предметы
+      if (screenSize.width < 5 || screenSize.height < 5) continue
+
+      // Применяем поворот
+      ctx.save()
+      const centerX = screenPos.x + screenSize.width / 2
+      const centerY = screenPos.y + screenSize.height / 2
+      ctx.translate(centerX, centerY)
+      ctx.rotate((item.rotation * Math.PI) / 180)
+      ctx.translate(-centerX, -centerY)
+
+      // Рисуем прямоугольник мебели
+      const fillColor = isSelected
+        ? 'rgba(245, 124, 0, 0.4)' // оранжевый для выделенной
+        : (this.isDark
+          ? 'rgba(139, 115, 85, 0.5)' // темно-коричневый для темной темы
+          : 'rgba(245, 124, 0, 0.3)') // светло-оранжевый для светлой темы
+
+      ctx.fillStyle = fillColor
+      ctx.fillRect(screenPos.x, screenPos.y, screenSize.width, screenSize.height)
+
+      // Обводка
+      const strokeColor = isSelected
+        ? '#f57c00'
+        : (this.isDark ? '#8b7355' : '#d97706')
+      ctx.strokeStyle = strokeColor
+      ctx.lineWidth = isSelected ? 3 : 2
+      ctx.strokeRect(screenPos.x, screenPos.y, screenSize.width, screenSize.height)
+
+      // Рисуем простую иконку в зависимости от типа
+      if (screenSize.width > 20 && screenSize.height > 20) {
+        ctx.fillStyle = this.isDark ? '#a0826d' : '#92400e'
+        ctx.font = `${Math.max(10, Math.min(14, 12 * (this.camera.zoom / 50)))}px sans-serif`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        
+        // Простая иконка в зависимости от типа
+        const icon = this.getFurnitureIcon(item.type)
+        ctx.fillText(icon, centerX, centerY)
+      }
+
+      ctx.restore()
+    }
+
+    ctx.globalAlpha = 1
+  }
+
+  /**
+   * Получает иконку для типа мебели
+   */
+  private getFurnitureIcon(type: string): string {
+    const typeLower = type.toLowerCase()
+    if (typeLower.includes('кровать') || typeLower.includes('bed')) return '🛏️'
+    if (typeLower.includes('диван') || typeLower.includes('sofa')) return '🛋️'
+    if (typeLower.includes('стол') || typeLower.includes('table')) return '🪑'
+    if (typeLower.includes('стул') || typeLower.includes('chair')) return '💺'
+    if (typeLower.includes('шкаф') || typeLower.includes('wardrobe')) return '🚪'
+    if (typeLower.includes('холодильник') || typeLower.includes('refrigerator')) return '❄️'
+    if (typeLower.includes('унитаз') || typeLower.includes('toilet')) return '🚽'
+    if (typeLower.includes('раковина') || typeLower.includes('sink')) return '🚿'
+    if (typeLower.includes('ванна') || typeLower.includes('bathtub')) return '🛁'
+    return '📦'
+  }
+
+  /**
+   * Рендерит превью мебели при размещении
+   */
+  renderFurniturePreview(
+    catalogItemId: string | null,
+    position: Point | null
+  ) {
+    if (!catalogItemId || !position) return
+
+    const catalogItem = findCatalogItem(catalogItemId)
+    if (!catalogItem) return
+
+    const ctx = this.ctx
+    const screenPos = worldToScreen(position, this.camera)
+    
+    // Конвертируем размеры из мм в метры, затем в пиксели
+    const pixelsPerMeter = 80
+    const widthMeters = catalogItem.defaultSize.width / 1000
+    const depthMeters = catalogItem.defaultSize.depth / 1000
+    const screenSize = {
+      width: widthMeters * this.camera.zoom,
+      height: depthMeters * this.camera.zoom,
+    }
+
+    // Полупрозрачный превью
+    ctx.globalAlpha = 0.5
+    ctx.fillStyle = 'rgba(245, 124, 0, 0.3)'
+    ctx.fillRect(
+      screenPos.x - screenSize.width / 2,
+      screenPos.y - screenSize.height / 2,
+      screenSize.width,
+      screenSize.height
+    )
+
+    ctx.strokeStyle = '#f57c00'
+    ctx.lineWidth = 2
+    ctx.setLineDash([5, 5])
+    ctx.strokeRect(
+      screenPos.x - screenSize.width / 2,
+      screenPos.y - screenSize.height / 2,
+      screenSize.width,
+      screenSize.height
+    )
+    ctx.setLineDash([])
+
+    ctx.globalAlpha = 1
   }
 
   /**

@@ -38,7 +38,11 @@ export class SelectTool {
       return { type: 'wall', id: wall.id }
     }
 
-    // TODO: Восстановить функционал инструмента мебель
+    // 5. Проверяем мебель
+    const furniture = this.findFurnitureAtPoint(position, state.furniture)
+    if (furniture) {
+      return { type: 'furniture', id: furniture.id }
+    }
 
     // 6. Проверяем комнаты
     const room = this.findRoomAtPoint(position, state.rooms)
@@ -63,7 +67,7 @@ export class SelectTool {
     state: EditorState,
     dispatch: any
   ): boolean {
-    const { nodes, walls, doors, windows, furniture, rooms, dimensions } = state
+    const { nodes, walls, doors, windows, rooms, dimensions } = state
 
     // Сначала проверяем узлы (приоритет)
     const node = this.findNodeAtPoint(position, nodes)
@@ -105,7 +109,15 @@ export class SelectTool {
       return true
     }
 
-    // TODO: Восстановить функционал инструмента мебель
+    // Проверяем мебель
+    const furnitureItem = this.findFurnitureAtPoint(position, state.furniture)
+    if (furnitureItem) {
+      dispatch({
+        type: 'SET_SELECTION',
+        selection: { type: 'furniture', id: furnitureItem.id },
+      })
+      return true
+    }
 
     // Проверяем комнаты
     const room = this.findRoomAtPoint(position, rooms)
@@ -159,7 +171,9 @@ export class SelectTool {
       case 'window':
         this.dragWindow(object.id, currentPos, state, dispatch)
         break
-      // TODO: Восстановить функционал инструмента мебель
+      case 'furniture':
+        this.dragFurniture(object.id, dx, dy, state, dispatch)
+        break
       case 'room':
         this.dragRoom(object.id, dx, dy, state, dispatch)
         break

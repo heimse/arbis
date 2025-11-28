@@ -10,7 +10,7 @@ import { WallTool } from './tools/WallTool'
 import { DoorTool } from './tools/DoorTool'
 import { WindowTool } from './tools/WindowTool'
 import { SelectTool } from './tools/SelectTool'
-// TODO: Восстановить функционал инструмента мебель
+import { FurnitureTool } from './tools/FurnitureTool'
 import { DimensionTool } from './tools/DimensionTool'
 import { RoomToolEditor } from './tools/RoomToolEditor'
 
@@ -31,7 +31,7 @@ export function Canvas({ width, height }: CanvasProps) {
   // Состояние для drag
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartPos, setDragStartPos] = useState<Point | null>(null)
-  const draggedObject = useRef<{ type: 'node' | 'door' | 'window' | 'room' | 'dimension'; id: string } | null>(null)
+  const draggedObject = useRef<{ type: 'node' | 'door' | 'window' | 'room' | 'dimension' | 'furniture'; id: string } | null>(null)
 
   // Рендеринг
   const render = useCallback(() => {
@@ -69,7 +69,16 @@ export function Canvas({ width, height }: CanvasProps) {
     // Рисуем окна
     renderer.renderWindows(state.windows, state.walls, state.nodes, state.layers, state.selection, isDragging)
 
-    // TODO: Восстановить рендеринг мебели
+    // Рисуем мебель
+    renderer.renderFurniture(state.furniture, state.layers, state.selection, isDragging)
+
+    // Рисуем превью мебели при размещении
+    if (state.activeTool === 'furniture') {
+      const preview = FurnitureTool.getPreview()
+      if (preview) {
+        renderer.renderFurniturePreview(preview.catalogItemId, preview.position)
+      }
+    }
 
     // Рисуем размерные линии
     renderer.renderDimensions(state.dimensions, state.layers, state.selection, isDragging)
@@ -237,7 +246,27 @@ export function Canvas({ width, height }: CanvasProps) {
             break
           }
             
-          // TODO: Восстановить функционал инструмента мебель
+          case 'furniture': {
+            // Проверяем, есть ли мебель под курсором для drag
+            const clickedObject = SelectTool.findObjectAtPoint(worldPos, state)
+            
+            if (clickedObject && clickedObject.type === 'furniture') {
+              // Начинаем drag мебели
+              dispatch({ type: 'START_DRAG' })
+              setIsDragging(true)
+              setDragStartPos(worldPos)
+              draggedObject.current = clickedObject
+              
+              // Выделяем мебель (если ещё не выделена)
+              if (state.selection.type !== 'furniture' || state.selection.id !== clickedObject.id) {
+                SelectTool.handleClick(worldPos, state, dispatch)
+              }
+            } else {
+              // Размещаем новую мебель
+              FurnitureTool.handleClick(worldPos, state, dispatch)
+            }
+            break
+          }
         }
       }
   }, [state, dispatch, getSnappedPosition])
@@ -261,6 +290,12 @@ export function Canvas({ width, height }: CanvasProps) {
         type: 'UPDATE_DIMENSION_DRAWING',
         endPoint: worldPos,
       })
+    }
+
+    // Обновляем превью мебели при перемещении курсора
+    if (state.activeTool === 'furniture' && !isDragging) {
+      FurnitureTool.updatePreviewPosition(worldPos)
+      render()
     }
 
     // Обновляем выделение области для комнаты (только если не перетаскиваем объект)
@@ -318,6 +353,16 @@ export function Canvas({ width, height }: CanvasProps) {
         canvas.style.cursor = 'crosshair'
       } else {
         canvas.style.cursor = 'crosshair'
+      }
+    }
+
+    // Курсор для инструмента мебели
+    if (state.activeTool === 'furniture' && canvas) {
+      const preview = FurnitureTool.getPreview()
+      if (preview) {
+        canvas.style.cursor = 'crosshair'
+      } else {
+        canvas.style.cursor = 'default'
       }
     }
 

@@ -39,7 +39,28 @@ export function KeyboardHandler() {
 					break;
 
 				case "r":
-					setTool("dimension");
+					if (
+						state.activeTool === "select" &&
+						state.selection.type === "furniture"
+					) {
+						// Поворачиваем мебель на 90° при нажатии R
+						const furniture = state.furniture.get(state.selection.id!);
+						if (furniture) {
+							dispatch({
+								type: "UPDATE_FURNITURE",
+								id: furniture.id,
+								updates: {
+									rotation: (furniture.rotation + 90) % 360,
+								},
+							});
+						}
+					} else {
+						setTool("dimension");
+					}
+					break;
+
+				case "f":
+					setTool("furniture");
 					break;
 
 				case "escape":

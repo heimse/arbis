@@ -206,6 +206,31 @@ function StatusBar() {
         return 'Кликните на стену для добавления двери'
       case 'window':
         return 'Кликните на стену для добавления окна'
+      case 'furniture':
+        if (state.selection.id && state.selection.type === 'furniture') {
+          return (
+            <>
+              <div className="font-medium">Мебель выделена</div>
+              <div className="text-gray-400 dark:text-gray-500 mt-1">
+                Перетащите для перемещения
+              </div>
+              <div className="text-gray-400 dark:text-gray-500">
+                <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">R</kbd> - повернуть на 90°
+              </div>
+            </>
+          )
+        }
+        return (
+          <>
+            <div className="font-medium">Инструмент мебели</div>
+            <div className="text-gray-400 dark:text-gray-500 mt-1">
+              Выберите мебель в каталоге справа
+            </div>
+            <div className="text-gray-400 dark:text-gray-500">
+              Кликните на план для размещения
+            </div>
+          </>
+        )
       case 'select':
         if (state.selection.id && state.selection.type) {
           return (
