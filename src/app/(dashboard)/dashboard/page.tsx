@@ -149,7 +149,7 @@ export default async function DashboardPage() {
 									<LayoutGrid className="h-6 w-6 text-primary" />
 								</div>
 								<div>
-									<CardTitle>Смотреть последние варианты</CardTitle>
+									<CardTitle>Смотреть ваши планировки</CardTitle>
 									<CardDescription>
 										Просмотрите сохранённые планировки
 									</CardDescription>
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
 						</CardHeader>
 						<CardContent>
 							<Button asChild className="w-full" variant="secondary">
-								<Link href="/dashboard/plans">Перейти к вариантам</Link>
+								<Link href="/dashboard/plans">Перейти к планировкам</Link>
 							</Button>
 						</CardContent>
 					</Card>

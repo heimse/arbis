@@ -8,8 +8,10 @@ import { RightPanel } from './RightPanel'
 import { KeyboardHandler } from './KeyboardHandler'
 import { HistoryIndicator } from './HistoryIndicator'
 import { EditableProjectName } from './EditableProjectName'
-import { Save, Maximize2, Menu } from 'lucide-react'
+import { Save, Maximize2, Menu, Download, Upload, CheckCircle2 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import type { EditorState } from '@/types/editor'
+import { useAutoSave } from '@/hooks/useAutoSave'
 
 interface Editor2DProps {
   projectId: string
@@ -28,6 +30,32 @@ function EditorContent({ projectId, projectName = 'Без названия' }: E
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [currentProjectName, setCurrentProjectName] = useState(projectName)
   const [isSaving, setIsSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const { state, dispatch } = useEditor()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Автосохранение
+  const { savePlan } = useAutoSave({
+    projectId,
+    state,
+    enabled: true,
+    debounceMs: 2000, // 2 секунды после действия
+    intervalMs: 3 * 60 * 1000, // 3 минуты
+    onSaveStart: () => {
+      setSaveStatus('saving')
+    },
+    onSaveSuccess: () => {
+      setSaveStatus('saved')
+      // Сбрасываем статус через 2 секунды
+      setTimeout(() => {
+        setSaveStatus('idle')
+      }, 2000)
+    },
+    onSaveError: (error) => {
+      console.error('Ошибка автосохранения:', error)
+      setSaveStatus('idle')
+    },
+  })
 
   const handleProjectNameSave = async (newName: string) => {
     setCurrentProjectName(newName)
@@ -108,6 +136,145 @@ function EditorContent({ projectId, projectName = 'Без названия' }: E
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
 
+  // Экспорт конфигурации в JSON
+  const handleExportJSON = () => {
+    try {
+      // Преобразуем Map в массивы для JSON
+      const exportData = {
+        nodes: Array.from(state.nodes.values()),
+        walls: Array.from(state.walls.values()),
+        doors: Array.from(state.doors.values()),
+        windows: Array.from(state.windows.values()),
+        rooms: Array.from(state.rooms.values()),
+        furniture: Array.from(state.furniture.values()),
+        dimensions: Array.from(state.dimensions.values()),
+        layers: Array.from(state.layers.values()),
+        camera: state.camera,
+        backgroundImage: state.backgroundImage,
+        gridSettings: state.gridSettings,
+        planSettings: state.planSettings,
+        snapMode: state.snapMode,
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+      }
+
+      const jsonData = JSON.stringify(exportData, null, 2)
+      const blob = new Blob([jsonData], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `plan-${currentProjectName || 'config'}-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Ошибка при экспорте JSON:', error)
+      alert('Ошибка при экспорте конфигурации')
+    }
+  }
+
+  // Импорт конфигурации из JSON
+  const handleImportJSON = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const jsonData = e.target?.result as string
+        const importedData = JSON.parse(jsonData)
+        
+        // Валидация базовой структуры
+        if (!importedData || typeof importedData !== 'object') {
+          throw new Error('Неверный формат файла')
+        }
+
+        // Очищаем текущее состояние (кроме слоев, настроек и камеры)
+        dispatch({ type: 'CLEAR_ALL' })
+
+        // Импортируем слои сначала (обновляем существующие)
+        // CLEAR_ALL сохраняет слои, поэтому они должны существовать
+        if (Array.isArray(importedData.layers)) {
+          importedData.layers.forEach((layer: any) => {
+            // UPDATE_LAYER безопасно обработает случай, если слоя нет
+            dispatch({ type: 'UPDATE_LAYER', id: layer.id, updates: layer })
+          })
+        }
+
+        // Импортируем узлы (должны быть первыми, так как стены ссылаются на них)
+        if (Array.isArray(importedData.nodes)) {
+          importedData.nodes.forEach((node: any) => {
+            dispatch({ type: 'ADD_NODE', node })
+          })
+        }
+
+        // Импортируем стены (после узлов)
+        if (Array.isArray(importedData.walls)) {
+          importedData.walls.forEach((wall: any) => {
+            dispatch({ type: 'ADD_WALL', wall })
+          })
+        }
+
+        // Импортируем двери (после стен)
+        if (Array.isArray(importedData.doors)) {
+          importedData.doors.forEach((door: any) => {
+            dispatch({ type: 'ADD_DOOR', door })
+          })
+        }
+
+        // Импортируем окна (после стен)
+        if (Array.isArray(importedData.windows)) {
+          importedData.windows.forEach((window: any) => {
+            dispatch({ type: 'ADD_WINDOW', window })
+          })
+        }
+
+        // Импортируем комнаты
+        if (Array.isArray(importedData.rooms)) {
+          importedData.rooms.forEach((room: any) => {
+            dispatch({ type: 'ADD_ROOM', room })
+          })
+        }
+
+        // Импортируем мебель
+        if (Array.isArray(importedData.furniture)) {
+          importedData.furniture.forEach((furniture: any) => {
+            dispatch({ type: 'ADD_FURNITURE', furniture })
+          })
+        }
+
+        // Импортируем размерные линии
+        if (Array.isArray(importedData.dimensions)) {
+          importedData.dimensions.forEach((dimension: any) => {
+            dispatch({ type: 'ADD_DIMENSION', dimension })
+          })
+        }
+
+        // Импортируем камеру
+        if (importedData.camera) {
+          dispatch({ type: 'SET_CAMERA', camera: importedData.camera })
+        }
+
+        // Импортируем фоновое изображение
+        if (importedData.backgroundImage !== undefined) {
+          dispatch({ type: 'SET_BACKGROUND', background: importedData.backgroundImage })
+        }
+
+        // Очищаем input для возможности повторного выбора того же файла
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+
+        alert('Конфигурация успешно импортирована')
+      } catch (error) {
+        console.error('Ошибка при импорте JSON:', error)
+        alert('Ошибка при импорте конфигурации. Проверьте формат файла.')
+      }
+    }
+    reader.readAsText(file)
+  }
+
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-950">
       {/* Обработчик клавиатуры */}
@@ -141,11 +308,64 @@ function EditorContent({ projectId, projectName = 'Без названия' }: E
           <ThemeToggle />
 
           <button
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            onClick={handleExportJSON}
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            title="Экспорт в JSON"
+          >
+            <Download size={16} />
+            <span>Экспорт</span>
+          </button>
+
+          <label className="flex items-center gap-2 px-4 py-2 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors cursor-pointer">
+            <Upload size={16} />
+            <span>Импорт</span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,application/json"
+              onChange={handleImportJSON}
+              className="hidden"
+            />
+          </label>
+
+          <button
+            onClick={async () => {
+              setIsSaving(true)
+              setSaveStatus('saving')
+              try {
+                await savePlan()
+                setSaveStatus('saved')
+                setTimeout(() => {
+                  setSaveStatus('idle')
+                }, 2000)
+              } catch (error) {
+                console.error('Ошибка при сохранении:', error)
+                setSaveStatus('idle')
+                alert('Ошибка при сохранении. Попробуйте еще раз.')
+              } finally {
+                setIsSaving(false)
+              }
+            }}
+            disabled={isSaving || saveStatus === 'saving'}
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Сохранить"
           >
-            <Save size={16} />
-            <span>Сохранить</span>
+            {saveStatus === 'saved' ? (
+              <>
+                <CheckCircle2 size={16} />
+                <span>Сохранено</span>
+              </>
+            ) : saveStatus === 'saving' ? (
+              <>
+                <Save size={16} className="animate-spin" />
+                <span>Сохранение...</span>
+              </>
+            ) : (
+              <>
+                <Save size={16} />
+                <span>Сохранить</span>
+              </>
+            )}
           </button>
 
           <button
