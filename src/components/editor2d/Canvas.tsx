@@ -1,494 +1,600 @@
-'use client'
+"use client";
 
-import React, { useRef, useEffect, useCallback, useState } from 'react'
-import { useEditor } from '@/store/editorStore'
-import { worldToScreen, screenToWorld, snapToGrid, snapToNode, distance } from '@/lib/editor/geometry'
-import { SNAP_THRESHOLD } from '@/lib/editor/utils'
-import type { Point } from '@/types/editor'
-import { CanvasRenderer } from './CanvasRenderer'
-import { WallTool } from './tools/WallTool'
-import { DoorTool } from './tools/DoorTool'
-import { WindowTool } from './tools/WindowTool'
-import { SelectTool } from './tools/SelectTool'
-import { FurnitureTool } from './tools/FurnitureTool'
-import { DimensionTool } from './tools/DimensionTool'
-import { RoomToolEditor } from './tools/RoomToolEditor'
+import React, { useRef, useEffect, useCallback, useState } from "react";
+import { useEditor } from "@/store/editorStore";
+import {
+	worldToScreen,
+	screenToWorld,
+	snapToGrid,
+	snapToNode,
+	distance,
+} from "@/lib/editor/geometry";
+import { SNAP_THRESHOLD } from "@/lib/editor/utils";
+import type { Point } from "@/types/editor";
+import { CanvasRenderer } from "./CanvasRenderer";
+import { WallTool } from "./tools/WallTool";
+import { DoorTool } from "./tools/DoorTool";
+import { WindowTool } from "./tools/WindowTool";
+import { SelectTool } from "./tools/SelectTool";
+import { FurnitureTool } from "./tools/FurnitureTool";
+import { DimensionTool } from "./tools/DimensionTool";
+import { RoomToolEditor } from "./tools/RoomToolEditor";
 
 interface CanvasProps {
-  width: number
-  height: number
+	width: number;
+	height: number;
 }
 
 export function Canvas({ width, height }: CanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const { state, pan, zoom, dispatch } = useEditor()
-  
-  const isPanning = useRef(false)
-  const lastMousePos = useRef<Point>({ x: 0, y: 0 })
-  const currentMouseWorldPos = useRef<Point>({ x: 0, y: 0 })
-  const [isCtrlPressed, setIsCtrlPressed] = useState(false)
-  
-  // Состояние для drag
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStartPos, setDragStartPos] = useState<Point | null>(null)
-  const draggedObject = useRef<{ type: 'node' | 'door' | 'window' | 'room' | 'dimension' | 'furniture'; id: string } | null>(null)
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const { state, pan, zoom, dispatch } = useEditor();
 
-  // Рендеринг
-  const render = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+	const isPanning = useRef(false);
+	const lastMousePos = useRef<Point>({ x: 0, y: 0 });
+	const currentMouseWorldPos = useRef<Point>({ x: 0, y: 0 });
+	const [isCtrlPressed, setIsCtrlPressed] = useState(false);
 
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+	// Состояние для drag
+	const [isDragging, setIsDragging] = useState(false);
+	const [dragStartPos, setDragStartPos] = useState<Point | null>(null);
+	const draggedObject = useRef<{
+		type:
+			| "node"
+			| "wall"
+			| "door"
+			| "window"
+			| "room"
+			| "dimension"
+			| "furniture";
+		id: string;
+	} | null>(null);
 
-    // Очищаем canvas
-    ctx.clearRect(0, 0, width, height)
+	// Рендеринг
+	const render = useCallback(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
 
-    // Создаём renderer
-    const renderer = new CanvasRenderer(ctx, state.camera, width, height)
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
 
-    // Рисуем фон (проверяем темную тему)
-    const isDark = document.documentElement.classList.contains('dark')
-    ctx.fillStyle = isDark ? '#0a0a0a' : '#fafafa'
-    ctx.fillRect(0, 0, width, height)
+		// Очищаем canvas
+		ctx.clearRect(0, 0, width, height);
 
-    // Рисуем сетку
-    if (state.gridSettings.visible) {
-      renderer.renderGrid(state.gridSettings)
-    }
+		// Создаём renderer
+		const renderer = new CanvasRenderer(ctx, state.camera, width, height);
 
-    // Рисуем комнаты ПЕРВЫМИ (как фон)
-    renderer.renderRooms(state.rooms, state.layers, state.selection, isDragging)
+		// Рисуем фон (проверяем темную тему)
+		const isDark = document.documentElement.classList.contains("dark");
+		ctx.fillStyle = isDark ? "#0a0a0a" : "#fafafa";
+		ctx.fillRect(0, 0, width, height);
 
-    // Рисуем стены
-    renderer.renderWalls(state.walls, state.nodes, state.layers, state.selection, isDragging)
+		// Рисуем сетку
+		if (state.gridSettings.visible) {
+			renderer.renderGrid(state.gridSettings);
+		}
 
-    // Рисуем двери
-    renderer.renderDoors(state.doors, state.walls, state.nodes, state.layers, state.selection, isDragging)
+		// Рисуем комнаты ПЕРВЫМИ (как фон)
+		renderer.renderRooms(
+			state.rooms,
+			state.layers,
+			state.selection,
+			isDragging
+		);
 
-    // Рисуем окна
-    renderer.renderWindows(state.windows, state.walls, state.nodes, state.layers, state.selection, isDragging)
+		// Рисуем стены
+		renderer.renderWalls(
+			state.walls,
+			state.nodes,
+			state.layers,
+			state.selection,
+			isDragging
+		);
 
-    // Рисуем мебель
-    renderer.renderFurniture(state.furniture, state.layers, state.selection, isDragging)
+		// Рисуем двери
+		renderer.renderDoors(
+			state.doors,
+			state.walls,
+			state.nodes,
+			state.layers,
+			state.selection,
+			isDragging
+		);
 
-    // Рисуем превью мебели при размещении
-    if (state.activeTool === 'furniture') {
-      const preview = FurnitureTool.getPreview()
-      if (preview) {
-        renderer.renderFurniturePreview(preview.catalogItemId, preview.position)
-      }
-    }
+		// Рисуем окна
+		renderer.renderWindows(
+			state.windows,
+			state.walls,
+			state.nodes,
+			state.layers,
+			state.selection,
+			isDragging
+		);
 
-    // Рисуем размерные линии
-    renderer.renderDimensions(state.dimensions, state.layers, state.selection, isDragging)
+		// Рисуем мебель
+		renderer.renderFurniture(
+			state.furniture,
+			state.layers,
+			state.selection,
+			isDragging
+		);
 
-    // Рисуем узлы (при выделении или в режиме редактирования)
-    if (state.activeTool === 'select' || state.activeTool === 'wall') {
-      renderer.renderNodes(state.nodes, state.selection, isDragging)
-    }
+		// Рисуем превью мебели при размещении
+		if (state.activeTool === "furniture") {
+			const preview = FurnitureTool.getPreview();
+			if (preview) {
+				renderer.renderFurniturePreview(
+					preview.catalogItemId,
+					preview.position
+				);
+			}
+		}
 
-    // Рисуем процесс рисования стены
-    if (state.wallDrawingState.isDrawing && state.wallDrawingState.nodes.length > 0) {
-      renderer.renderWallDrawing(
-        state.wallDrawingState.nodes,
-        state.nodes,
-        currentMouseWorldPos.current
-      )
-    }
+		// Рисуем размерные линии
+		renderer.renderDimensions(
+			state.dimensions,
+			state.layers,
+			state.selection,
+			isDragging
+		);
 
-    // Рисуем процесс рисования размерной линии
-    if (state.dimensionDrawingState.isDrawing && state.dimensionDrawingState.startPoint) {
-      renderer.renderDimensionDrawing(
-        state.dimensionDrawingState.startPoint,
-        state.dimensionDrawingState.tempEndPoint || currentMouseWorldPos.current
-      )
-    }
+		// Рисуем узлы (при выделении или в режиме редактирования)
+		if (state.activeTool === "select" || state.activeTool === "wall") {
+			renderer.renderNodes(state.nodes, state.selection, isDragging);
+		}
 
-    // Рисуем выделение области для комнаты
-    if (state.roomSelectionState.isSelecting && state.roomSelectionState.startPoint && state.roomSelectionState.endPoint) {
-      renderer.renderRoomSelection(
-        state.roomSelectionState.startPoint,
-        state.roomSelectionState.endPoint
-      )
-    }
+		// Рисуем процесс рисования стены
+		if (
+			state.wallDrawingState.isDrawing &&
+			state.wallDrawingState.nodes.length > 0
+		) {
+			renderer.renderWallDrawing(
+				state.wallDrawingState.nodes,
+				state.nodes,
+				currentMouseWorldPos.current
+			);
+		}
 
-    // Рисуем курсор snap
-    if (state.activeTool === 'wall') {
-      const snapped = getSnappedPosition(currentMouseWorldPos.current)
-      if (snapped.snapped) {
-        renderer.renderSnapIndicator(snapped.position)
-      }
-    }
-  }, [state, width, height])
+		// Рисуем процесс рисования размерной линии
+		if (
+			state.dimensionDrawingState.isDrawing &&
+			state.dimensionDrawingState.startPoint
+		) {
+			renderer.renderDimensionDrawing(
+				state.dimensionDrawingState.startPoint,
+				state.dimensionDrawingState.tempEndPoint || currentMouseWorldPos.current
+			);
+		}
 
-  // Вычисляем привязку
-  const getSnappedPosition = useCallback((worldPos: Point): { position: Point; snapped: boolean } => {
-    // Для инструмента Wall используем специальную логику с ортогональным snap
-    if (state.activeTool === 'wall' && state.wallDrawingState.isDrawing) {
-      const snappedPos = WallTool.getSnappedPosition(worldPos, state, isCtrlPressed)
-      return { position: snappedPos, snapped: true }
-    }
+		// Рисуем выделение области для комнаты
+		if (
+			state.roomSelectionState.isSelecting &&
+			state.roomSelectionState.startPoint &&
+			state.roomSelectionState.endPoint
+		) {
+			renderer.renderRoomSelection(
+				state.roomSelectionState.startPoint,
+				state.roomSelectionState.endPoint
+			);
+		}
 
-    if (!state.snapMode.toGrid && !state.snapMode.toNodes) {
-      return { position: worldPos, snapped: false }
-    }
+		// Рисуем курсор snap
+		if (state.activeTool === "wall") {
+			const snapped = getSnappedPosition(currentMouseWorldPos.current);
+			if (snapped.snapped) {
+				renderer.renderSnapIndicator(snapped.position);
+			}
+		}
+	}, [state, width, height]);
 
-    // Привязка к узлам (приоритет)
-    if (state.snapMode.toNodes) {
-      const nodeSnap = snapToNode(worldPos, state.nodes, SNAP_THRESHOLD.node)
-      if (nodeSnap) {
-        return {
-          position: { x: nodeSnap.node.x, y: nodeSnap.node.y },
-          snapped: true,
-        }
-      }
-    }
+	// Вычисляем привязку
+	const getSnappedPosition = useCallback(
+		(worldPos: Point): { position: Point; snapped: boolean } => {
+			// Для инструмента Wall используем специальную логику с ортогональным snap
+			if (state.activeTool === "wall" && state.wallDrawingState.isDrawing) {
+				const snappedPos = WallTool.getSnappedPosition(
+					worldPos,
+					state,
+					isCtrlPressed
+				);
+				return { position: snappedPos, snapped: true };
+			}
 
-    // Привязка к сетке
-    if (state.snapMode.toGrid) {
-      const gridPos = snapToGrid(worldPos, state.gridSettings.spacing)
-      if (distance(worldPos, gridPos) < SNAP_THRESHOLD.grid) {
-        return { position: gridPos, snapped: true }
-      }
-    }
+			if (!state.snapMode.toGrid && !state.snapMode.toNodes) {
+				return { position: worldPos, snapped: false };
+			}
 
-    return { position: worldPos, snapped: false }
-  }, [state, isCtrlPressed])
+			// Привязка к узлам (приоритет)
+			if (state.snapMode.toNodes) {
+				const nodeSnap = snapToNode(worldPos, state.nodes, SNAP_THRESHOLD.node);
+				if (nodeSnap) {
+					return {
+						position: { x: nodeSnap.node.x, y: nodeSnap.node.y },
+						snapped: true,
+					};
+				}
+			}
 
-  // Обработчики мыши
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+			// Привязка к сетке
+			if (state.snapMode.toGrid) {
+				const gridPos = snapToGrid(worldPos, state.gridSettings.spacing);
+				if (distance(worldPos, gridPos) < SNAP_THRESHOLD.grid) {
+					return { position: gridPos, snapped: true };
+				}
+			}
 
-    const rect = canvas.getBoundingClientRect()
-    const screenPos: Point = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    }
+			return { position: worldPos, snapped: false };
+		},
+		[state, isCtrlPressed]
+	);
 
-    const worldPos = screenToWorld(screenPos, state.camera)
-    const snappedPos = getSnappedPosition(worldPos)
+	// Обработчики мыши
+	const handleMouseDown = useCallback(
+		(e: React.MouseEvent<HTMLCanvasElement>) => {
+			const canvas = canvasRef.current;
+			if (!canvas) return;
 
-    // Middle mouse или Shift + Left mouse для pan
-    // Но не паним, если выделяем комнату
-    if ((e.button === 1 || (e.button === 0 && e.shiftKey)) && state.activeTool !== 'room') {
-      isPanning.current = true
-      lastMousePos.current = screenPos
-      e.preventDefault()
-      return
-    }
+			const rect = canvas.getBoundingClientRect();
+			const screenPos: Point = {
+				x: e.clientX - rect.left,
+				y: e.clientY - rect.top,
+			};
 
-      // Левая кнопка мыши
-      if (e.button === 0) {
-        // Обработка в зависимости от активного инструмента
-        switch (state.activeTool) {
-          case 'wall':
-            WallTool.handleClick(snappedPos.position, state, dispatch)
-            break
-            
-          case 'door':
-            DoorTool.handleClick(worldPos, state, dispatch)
-            break
-            
-          case 'window':
-            WindowTool.handleClick(worldPos, state, dispatch)
-            break
-            
-          case 'select': {
-            // Проверяем, есть ли объект под курсором для drag
-            const clickedObject = SelectTool.findObjectAtPoint(worldPos, state)
-            
-            if (clickedObject) {
-              // Начинаем drag - сохраняем снапшот в истории
-              dispatch({ type: 'START_DRAG' })
-              setIsDragging(true)
-              setDragStartPos(worldPos)
-              draggedObject.current = clickedObject
-              
-              // Выделяем объект (если ещё не выделен)
-              if (state.selection.type !== clickedObject.type || state.selection.id !== clickedObject.id) {
-                SelectTool.handleClick(worldPos, state, dispatch)
-              }
-            } else {
-              // Просто клик для выделения/снятия выделения
-              SelectTool.handleClick(worldPos, state, dispatch)
-            }
-            break
-          }
-          
-          case 'dimension':
-            DimensionTool.handleClick(worldPos, state, dispatch)
-            break
-            
-          case 'room': {
-            // Проверяем, есть ли комната под курсором для drag
-            const clickedObject = SelectTool.findObjectAtPoint(worldPos, state)
-            
-            if (clickedObject && clickedObject.type === 'room') {
-              // Начинаем drag комнаты
-              dispatch({ type: 'START_DRAG' })
-              setIsDragging(true)
-              setDragStartPos(worldPos)
-              draggedObject.current = clickedObject
-              
-              // Выделяем комнату (если ещё не выделена)
-              if (state.selection.type !== 'room' || state.selection.id !== clickedObject.id) {
-                SelectTool.handleClick(worldPos, state, dispatch)
-              }
-            } else {
-              // Начинаем выделение области для новой комнаты
-              dispatch({
-                type: 'START_ROOM_SELECTION',
-                startPoint: worldPos,
-              })
-            }
-            break
-          }
-            
-          case 'furniture': {
-            // Проверяем, есть ли мебель под курсором для drag
-            const clickedObject = SelectTool.findObjectAtPoint(worldPos, state)
-            
-            if (clickedObject && clickedObject.type === 'furniture') {
-              // Начинаем drag мебели
-              dispatch({ type: 'START_DRAG' })
-              setIsDragging(true)
-              setDragStartPos(worldPos)
-              draggedObject.current = clickedObject
-              
-              // Выделяем мебель (если ещё не выделена)
-              if (state.selection.type !== 'furniture' || state.selection.id !== clickedObject.id) {
-                SelectTool.handleClick(worldPos, state, dispatch)
-              }
-            } else {
-              // Размещаем новую мебель
-              FurnitureTool.handleClick(worldPos, state, dispatch)
-            }
-            break
-          }
-        }
-      }
-  }, [state, dispatch, getSnappedPosition])
+			const worldPos = screenToWorld(screenPos, state.camera);
+			const snappedPos = getSnappedPosition(worldPos);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+			// Middle mouse или Shift + Left mouse для pan
+			// Но не паним, если выделяем комнату
+			if (
+				(e.button === 1 || (e.button === 0 && e.shiftKey)) &&
+				state.activeTool !== "room"
+			) {
+				isPanning.current = true;
+				lastMousePos.current = screenPos;
+				e.preventDefault();
+				return;
+			}
 
-    const rect = canvas.getBoundingClientRect()
-    const screenPos: Point = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    }
+			// Левая кнопка мыши
+			if (e.button === 0) {
+				// Обработка в зависимости от активного инструмента
+				switch (state.activeTool) {
+					case "wall":
+						WallTool.handleClick(snappedPos.position, state, dispatch);
+						break;
 
-    const worldPos = screenToWorld(screenPos, state.camera)
-    currentMouseWorldPos.current = worldPos
+					case "door":
+						DoorTool.handleClick(worldPos, state, dispatch);
+						break;
 
-    // Обновляем временную конечную точку при рисовании размерной линии
-    if (state.dimensionDrawingState.isDrawing && state.dimensionDrawingState.startPoint) {
-      dispatch({
-        type: 'UPDATE_DIMENSION_DRAWING',
-        endPoint: worldPos,
-      })
-    }
+					case "window":
+						WindowTool.handleClick(worldPos, state, dispatch);
+						break;
 
-    // Обновляем превью мебели при перемещении курсора
-    if (state.activeTool === 'furniture' && !isDragging) {
-      FurnitureTool.updatePreviewPosition(worldPos)
-      render()
-    }
+					case "select": {
+						// Проверяем, есть ли объект под курсором для drag
+						const clickedObject = SelectTool.findObjectAtPoint(worldPos, state);
 
-    // Обновляем выделение области для комнаты (только если не перетаскиваем объект)
-    if (
-      state.roomSelectionState.isSelecting &&
-      state.roomSelectionState.startPoint &&
-      !isDragging
-    ) {
-      dispatch({
-        type: 'UPDATE_ROOM_SELECTION',
-        endPoint: worldPos,
-      })
-    }
+						if (clickedObject) {
+							// Начинаем drag - сохраняем снапшот в истории
+							dispatch({ type: "START_DRAG" });
+							setIsDragging(true);
+							setDragStartPos(worldPos);
+							draggedObject.current = clickedObject;
 
-    // Drag объекта
-    if (isDragging && dragStartPos && draggedObject.current) {
-      const dx = worldPos.x - dragStartPos.x
-      const dy = worldPos.y - dragStartPos.y
-      
-      SelectTool.handleDrag(
-        draggedObject.current,
-        dx,
-        dy,
-        worldPos,
-        state,
-        dispatch
-      )
-      
-      setDragStartPos(worldPos)
-      render()
-      return
-    }
+							// Выделяем объект (если ещё не выделен)
+							if (
+								state.selection.type !== clickedObject.type ||
+								state.selection.id !== clickedObject.id
+							) {
+								SelectTool.handleClick(worldPos, state, dispatch);
+							}
+						} else {
+							// Просто клик для выделения/снятия выделения
+							SelectTool.handleClick(worldPos, state, dispatch);
+						}
+						break;
+					}
 
-    // Pan (но не во время выделения комнаты)
-    if (isPanning.current && state.activeTool !== 'room') {
-      const dx = screenPos.x - lastMousePos.current.x
-      const dy = screenPos.y - lastMousePos.current.y
-      pan(-dx, -dy)
-      lastMousePos.current = screenPos
-    }
+					case "dimension":
+						DimensionTool.handleClick(worldPos, state, dispatch);
+						break;
 
-    // Изменяем курсор при hover над объектом в режиме Select
-    if (state.activeTool === 'select' && !isDragging && !isPanning.current) {
-      const objectAtPoint = SelectTool.findObjectAtPoint(worldPos, state)
-      if (objectAtPoint && canvas) {
-        canvas.style.cursor = 'grab'
-      } else if (canvas) {
-        canvas.style.cursor = 'default'
-      }
-    }
+					case "room": {
+						// Проверяем, есть ли комната под курсором для drag
+						const clickedObject = SelectTool.findObjectAtPoint(worldPos, state);
 
-    // Курсор для инструмента комнаты
-    if (state.activeTool === 'room' && canvas) {
-      if (state.roomSelectionState.isSelecting) {
-        canvas.style.cursor = 'crosshair'
-      } else {
-        canvas.style.cursor = 'crosshair'
-      }
-    }
+						if (clickedObject && clickedObject.type === "room") {
+							// Начинаем drag комнаты
+							dispatch({ type: "START_DRAG" });
+							setIsDragging(true);
+							setDragStartPos(worldPos);
+							draggedObject.current = clickedObject;
 
-    // Курсор для инструмента мебели
-    if (state.activeTool === 'furniture' && canvas) {
-      const preview = FurnitureTool.getPreview()
-      if (preview) {
-        canvas.style.cursor = 'crosshair'
-      } else {
-        canvas.style.cursor = 'default'
-      }
-    }
+							// Выделяем комнату (если ещё не выделена)
+							if (
+								state.selection.type !== "room" ||
+								state.selection.id !== clickedObject.id
+							) {
+								SelectTool.handleClick(worldPos, state, dispatch);
+							}
+						} else {
+							// Начинаем выделение области для новой комнаты
+							dispatch({
+								type: "START_ROOM_SELECTION",
+								startPoint: worldPos,
+							});
+						}
+						break;
+					}
 
-    render()
-  }, [state, isDragging, dragStartPos, pan, render])
+					case "furniture": {
+						// Проверяем, есть ли мебель под курсором для drag
+						const clickedObject = SelectTool.findObjectAtPoint(worldPos, state);
 
-  const handleMouseUp = useCallback(() => {
-    isPanning.current = false
-    
-    // Завершаем drag - сохраняем финальный снапшот в истории
-    if (isDragging) {
-      dispatch({ type: 'END_DRAG' })
-      setIsDragging(false)
-      setDragStartPos(null)
-      draggedObject.current = null
-    }
+						if (clickedObject && clickedObject.type === "furniture") {
+							// Начинаем drag мебели
+							dispatch({ type: "START_DRAG" });
+							setIsDragging(true);
+							setDragStartPos(worldPos);
+							draggedObject.current = clickedObject;
 
-    // Завершаем выделение области для комнаты
-    if (state.roomSelectionState.isSelecting && state.roomSelectionState.startPoint && state.roomSelectionState.endPoint) {
-      RoomToolEditor.handleSelectionFinish(
-        state.roomSelectionState.startPoint,
-        state.roomSelectionState.endPoint,
-        state,
-        dispatch
-      )
-      dispatch({ type: 'FINISH_ROOM_SELECTION' })
-    }
-  }, [isDragging, state, dispatch])
+							// Выделяем мебель (если ещё не выделена)
+							if (
+								state.selection.type !== "furniture" ||
+								state.selection.id !== clickedObject.id
+							) {
+								SelectTool.handleClick(worldPos, state, dispatch);
+							}
+						} else {
+							// Размещаем новую мебель
+							FurnitureTool.handleClick(worldPos, state, dispatch);
+						}
+						break;
+					}
+				}
+			}
+		},
+		[state, dispatch, getSnappedPosition]
+	);
 
-  const handleMouseLeave = useCallback(() => {
-    // При выходе курсора за пределы canvas тоже завершаем drag
-    if (isDragging) {
-      dispatch({ type: 'END_DRAG' })
-      setIsDragging(false)
-      setDragStartPos(null)
-      draggedObject.current = null
-    }
-    
-    // Отменяем выделение комнаты при выходе курсора
-    if (state.roomSelectionState.isSelecting) {
-      dispatch({ type: 'CANCEL_ROOM_SELECTION' })
-    }
-    
-    isPanning.current = false
-  }, [isDragging, state, dispatch])
+	const handleMouseMove = useCallback(
+		(e: React.MouseEvent<HTMLCanvasElement>) => {
+			const canvas = canvasRef.current;
+			if (!canvas) return;
 
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
-    e.preventDefault()
-    
-    // Если зажат Ctrl и рисуется стена - изменяем угол
-    if (e.ctrlKey && state.activeTool === 'wall' && state.wallDrawingState.isDrawing) {
-      WallTool.adjustAngle(e.deltaY)
-      render()
-      return
-    }
-    
-    const canvas = canvasRef.current
-    if (!canvas) return
+			const rect = canvas.getBoundingClientRect();
+			const screenPos: Point = {
+				x: e.clientX - rect.left,
+				y: e.clientY - rect.top,
+			};
 
-    const rect = canvas.getBoundingClientRect()
-    const screenPos: Point = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    }
+			const worldPos = screenToWorld(screenPos, state.camera);
+			currentMouseWorldPos.current = worldPos;
 
-    const delta = e.deltaY > 0 ? -0.1 : 0.1
-    zoom(delta, screenPos)
-  }, [zoom, state.activeTool, state.wallDrawingState.isDrawing, render])
+			// Обновляем временную конечную точку при рисовании размерной линии
+			if (
+				state.dimensionDrawingState.isDrawing &&
+				state.dimensionDrawingState.startPoint
+			) {
+				dispatch({
+					type: "UPDATE_DIMENSION_DRAWING",
+					endPoint: worldPos,
+				});
+			}
 
-  // Обработка клавиш Ctrl
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Control' || e.key === 'Meta') {
-        setIsCtrlPressed(true)
-      }
-    }
+			// Обновляем превью мебели при перемещении курсора
+			if (state.activeTool === "furniture" && !isDragging) {
+				FurnitureTool.updatePreviewPosition(worldPos);
+				render();
+			}
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Control' || e.key === 'Meta') {
-        setIsCtrlPressed(false)
-        // Сбрасываем угол при отпускании Ctrl
-        if (state.activeTool === 'wall') {
-          WallTool.resetAngle()
-        }
-      }
-    }
+			// Обновляем выделение области для комнаты (только если не перетаскиваем объект)
+			if (
+				state.roomSelectionState.isSelecting &&
+				state.roomSelectionState.startPoint &&
+				!isDragging
+			) {
+				dispatch({
+					type: "UPDATE_ROOM_SELECTION",
+					endPoint: worldPos,
+				});
+			}
 
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
+			// Drag объекта
+			if (isDragging && dragStartPos && draggedObject.current) {
+				const dx = worldPos.x - dragStartPos.x;
+				const dy = worldPos.y - dragStartPos.y;
 
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-    }
-  }, [state.activeTool])
+				SelectTool.handleDrag(
+					draggedObject.current,
+					dx,
+					dy,
+					worldPos,
+					state,
+					dispatch
+				);
 
-  // Рендерим при изменении состояния
-  useEffect(() => {
-    render()
-  }, [render])
+				setDragStartPos(worldPos);
+				render();
+				return;
+			}
 
-  // Обработка изменения размера
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+			// Pan (но не во время выделения комнаты)
+			if (isPanning.current && state.activeTool !== "room") {
+				const dx = screenPos.x - lastMousePos.current.x;
+				const dy = screenPos.y - lastMousePos.current.y;
+				pan(-dx, -dy);
+				lastMousePos.current = screenPos;
+			}
 
-    canvas.width = width
-    canvas.height = height
-    render()
-  }, [width, height, render])
+			// Изменяем курсор при hover над объектом в режиме Select
+			if (state.activeTool === "select" && !isDragging && !isPanning.current) {
+				const objectAtPoint = SelectTool.findObjectAtPoint(worldPos, state);
+				if (objectAtPoint && canvas) {
+					canvas.style.cursor = "grab";
+				} else if (canvas) {
+					canvas.style.cursor = "default";
+				}
+			}
 
-  return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
-      onWheel={handleWheel}
-      style={{ 
-        display: 'block',
-        cursor: isDragging ? 'grabbing' : (state.activeTool === 'select' ? 'default' : 'crosshair')
-      }}
-    />
-  )
+			// Курсор для инструмента комнаты
+			if (state.activeTool === "room" && canvas) {
+				if (state.roomSelectionState.isSelecting) {
+					canvas.style.cursor = "crosshair";
+				} else {
+					canvas.style.cursor = "crosshair";
+				}
+			}
+
+			// Курсор для инструмента мебели
+			if (state.activeTool === "furniture" && canvas) {
+				const preview = FurnitureTool.getPreview();
+				if (preview) {
+					canvas.style.cursor = "crosshair";
+				} else {
+					canvas.style.cursor = "default";
+				}
+			}
+
+			render();
+		},
+		[state, isDragging, dragStartPos, pan, render]
+	);
+
+	const handleMouseUp = useCallback(() => {
+		isPanning.current = false;
+
+		// Завершаем drag - сохраняем финальный снапшот в истории
+		if (isDragging) {
+			dispatch({ type: "END_DRAG" });
+			setIsDragging(false);
+			setDragStartPos(null);
+			draggedObject.current = null;
+		}
+
+		// Завершаем выделение области для комнаты
+		if (
+			state.roomSelectionState.isSelecting &&
+			state.roomSelectionState.startPoint &&
+			state.roomSelectionState.endPoint
+		) {
+			RoomToolEditor.handleSelectionFinish(
+				state.roomSelectionState.startPoint,
+				state.roomSelectionState.endPoint,
+				state,
+				dispatch
+			);
+			dispatch({ type: "FINISH_ROOM_SELECTION" });
+		}
+	}, [isDragging, state, dispatch]);
+
+	const handleMouseLeave = useCallback(() => {
+		// При выходе курсора за пределы canvas тоже завершаем drag
+		if (isDragging) {
+			dispatch({ type: "END_DRAG" });
+			setIsDragging(false);
+			setDragStartPos(null);
+			draggedObject.current = null;
+		}
+
+		// Отменяем выделение комнаты при выходе курсора
+		if (state.roomSelectionState.isSelecting) {
+			dispatch({ type: "CANCEL_ROOM_SELECTION" });
+		}
+
+		isPanning.current = false;
+	}, [isDragging, state, dispatch]);
+
+	const handleWheel = useCallback(
+		(e: React.WheelEvent<HTMLCanvasElement>) => {
+			e.preventDefault();
+
+			// Если зажат Ctrl и рисуется стена - изменяем угол
+			if (
+				e.ctrlKey &&
+				state.activeTool === "wall" &&
+				state.wallDrawingState.isDrawing
+			) {
+				WallTool.adjustAngle(e.deltaY);
+				render();
+				return;
+			}
+
+			const canvas = canvasRef.current;
+			if (!canvas) return;
+
+			const rect = canvas.getBoundingClientRect();
+			const screenPos: Point = {
+				x: e.clientX - rect.left,
+				y: e.clientY - rect.top,
+			};
+
+			const delta = e.deltaY > 0 ? -0.1 : 0.1;
+			zoom(delta, screenPos);
+		},
+		[zoom, state.activeTool, state.wallDrawingState.isDrawing, render]
+	);
+
+	// Обработка клавиш Ctrl
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Control" || e.key === "Meta") {
+				setIsCtrlPressed(true);
+			}
+		};
+
+		const handleKeyUp = (e: KeyboardEvent) => {
+			if (e.key === "Control" || e.key === "Meta") {
+				setIsCtrlPressed(false);
+				// Сбрасываем угол при отпускании Ctrl
+				if (state.activeTool === "wall") {
+					WallTool.resetAngle();
+				}
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("keyup", handleKeyUp);
+
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("keyup", handleKeyUp);
+		};
+	}, [state.activeTool]);
+
+	// Рендерим при изменении состояния
+	useEffect(() => {
+		render();
+	}, [render]);
+
+	// Обработка изменения размера
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
+
+		canvas.width = width;
+		canvas.height = height;
+		render();
+	}, [width, height, render]);
+
+	return (
+		<canvas
+			ref={canvasRef}
+			width={width}
+			height={height}
+			onMouseDown={handleMouseDown}
+			onMouseMove={handleMouseMove}
+			onMouseUp={handleMouseUp}
+			onMouseLeave={handleMouseLeave}
+			onWheel={handleWheel}
+			style={{
+				display: "block",
+				cursor: isDragging
+					? "grabbing"
+					: state.activeTool === "select"
+					? "default"
+					: "crosshair",
+			}}
+		/>
+	);
 }
-

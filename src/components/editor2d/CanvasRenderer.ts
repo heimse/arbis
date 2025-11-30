@@ -710,13 +710,14 @@ export class CanvasRenderer {
 
 			// Если есть полигон, рендерим его, иначе используем прямоугольник
 			if (room.polygon && room.polygon.length >= 3) {
+				const polygon = room.polygon; // Сохраняем для TypeScript type narrowing
 				// Рендерим полигон
 				ctx.beginPath();
-				const firstPoint = worldToScreen(room.polygon[0], this.camera);
+				const firstPoint = worldToScreen(polygon[0], this.camera);
 				ctx.moveTo(firstPoint.x, firstPoint.y);
 
-				for (let i = 1; i < room.polygon.length; i++) {
-					const point = worldToScreen(room.polygon[i], this.camera);
+				for (let i = 1; i < polygon.length; i++) {
+					const point = worldToScreen(polygon[i], this.camera);
 					ctx.lineTo(point.x, point.y);
 				}
 				ctx.closePath();
@@ -746,9 +747,7 @@ export class CanvasRenderer {
 					// Вычисляем центр полигона
 					let centerX = 0;
 					let centerY = 0;
-					const validPoints = room.polygon.filter(
-						(p, i) => i < room.polygon.length - 1
-					); // исключаем последнюю точку если она дублирует первую
+					const validPoints = polygon.filter((p, i) => i < polygon.length - 1); // исключаем последнюю точку если она дублирует первую
 					for (const point of validPoints) {
 						centerX += point.x;
 						centerY += point.y;

@@ -46,7 +46,7 @@ export function useAutoSave({
 				.sort((a, b) => a.id.localeCompare(b.id))
 				.map((n) => ({
 					id: n.id,
-					position: n.position,
+					position: { x: n.x, y: n.y },
 				})),
 			walls: Array.from(state.walls.values())
 				.sort((a, b) => a.id.localeCompare(b.id))
@@ -77,8 +77,10 @@ export function useAutoSave({
 				.map((r) => ({
 					id: r.id,
 					name: r.name,
-					roomType: r.roomType,
-					area: r.area,
+					position: r.position,
+					size: r.size,
+					rotation: r.rotation,
+					layerId: r.layerId,
 				})),
 			furniture: Array.from(state.furniture.values())
 				.sort((a, b) => a.id.localeCompare(b.id))
