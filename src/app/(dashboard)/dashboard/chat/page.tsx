@@ -18,11 +18,12 @@ import Link from "next/link";
 export default async function ChatPage({
 	searchParams,
 }: {
-	searchParams: { projectId?: string };
+	searchParams: Promise<{ projectId?: string }>;
 }) {
 	const session = await auth();
 	const projects = await getUserProjects(session!.user!.id);
-	const selectedProjectId = searchParams.projectId || projects[0]?.id;
+	const resolvedSearchParams = await searchParams;
+	const selectedProjectId = resolvedSearchParams.projectId || projects[0]?.id;
 
 	// Получаем сообщения выбранного проекта
 	const messages = selectedProjectId
@@ -58,7 +59,9 @@ export default async function ChatPage({
 							{projects.map((project) => (
 								<Button
 									key={project.id}
-									variant={selectedProjectId === project.id ? "default" : "outline"}
+									variant={
+										selectedProjectId === project.id ? "default" : "outline"
+									}
 									asChild
 									size="sm"
 								>

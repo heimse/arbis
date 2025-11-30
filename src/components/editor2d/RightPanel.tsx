@@ -347,6 +347,29 @@ function WallProperties() {
 
 				<div className="space-y-2">
 					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Высота (м)
+					</label>
+					<Input
+						type="number"
+						value={(wall.height || 2.7).toFixed(2)}
+						onChange={(e) => {
+							const height = parseFloat(e.target.value) || 2.7;
+							if (height > 0) {
+								dispatch({
+									type: "UPDATE_WALL",
+									id: wall.id,
+									updates: { height },
+								});
+							}
+						}}
+						step="0.1"
+						min="1.5"
+						max="5.0"
+					/>
+				</div>
+
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
 						Длина (м)
 					</label>
 					<Input
@@ -831,6 +854,22 @@ function WindowProperties() {
 	);
 }
 
+// Получить дефолтную высоту мебели по типу
+function getDefaultFurnitureHeight(type: string): number {
+	switch (type) {
+		case "bed":
+			return 0.4;
+		case "sofa":
+			return 0.8;
+		case "table":
+			return 0.75;
+		case "chair":
+			return 1.0;
+		default:
+			return 0.5;
+	}
+}
+
 // Свойства мебели
 function FurnitureProperties() {
 	const { state, dispatch } = useEditor();
@@ -895,7 +934,7 @@ function FurnitureProperties() {
 
 					<div className="space-y-2">
 						<label className="text-sm text-gray-600 dark:text-gray-400">
-							Высота (м)
+							Глубина (м)
 						</label>
 						<Input
 							type="number"
@@ -916,6 +955,29 @@ function FurnitureProperties() {
 							min="0.1"
 						/>
 					</div>
+				</div>
+
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Высота (м) - для 3D
+					</label>
+					<Input
+						type="number"
+						value={(furniture.height || getDefaultFurnitureHeight(furniture.type)).toFixed(2)}
+						onChange={(e) => {
+							const height = parseFloat(e.target.value) || 0;
+							if (height > 0) {
+								dispatch({
+									type: "UPDATE_FURNITURE",
+									id: furniture.id,
+									updates: { height },
+								});
+							}
+						}}
+						step="0.1"
+						min="0.1"
+						max="3.0"
+					/>
 				</div>
 
 				<div className="space-y-2">

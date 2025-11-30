@@ -104,3 +104,5 @@ export function getAreaByRoomType(planData: PlanData): Record<string, number> {
 	return areasByType;
 }
 
+
+

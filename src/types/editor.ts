@@ -32,6 +32,7 @@ export type Wall = {
   endNodeId: NodeId
   type: WallType
   thickness: number // в мм
+  height?: number // высота стены в метрах (по умолчанию 2.7)
   layerId: LayerId
 }
 
@@ -77,7 +78,8 @@ export type Furniture = {
   id: FurnitureId
   type: string // тип мебели (например, "sofa", "bed", "table")
   position: Point // в метрах
-  size: { width: number; height: number } // в метрах
+  size: { width: number; height: number } // в метрах (width и height - это ширина и глубина в 2D)
+  height?: number // высота в метрах (для 3D)
   rotation: number // угол поворота в градусах
   layerId: LayerId
 }

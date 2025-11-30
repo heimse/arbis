@@ -16,6 +16,9 @@ import {
 	createDemoProjectForUser,
 } from "@/lib/services/projects";
 import { revalidatePath } from "next/cache";
+import { LoadTemplatesButton } from "@/components/load-templates-button";
+import { ProjectCard } from "@/components/projects/ProjectCard";
+import { ClearAllProjectsButton } from "@/components/projects/ClearAllProjectsButton";
 
 /**
  * Server Action для создания демо-проекта
@@ -36,6 +39,14 @@ export default async function DashboardPage() {
 	const session = await auth();
 	const projects = await getUserProjects(session!.user!.id);
 
+	// Вычисляем статистику по всем проектам
+	const projectsStats = {
+		totalProjects: projects.length,
+		totalPlans: projects.reduce((sum, p) => sum + p._count.plans, 0),
+		totalMessages: projects.reduce((sum, p) => sum + p._count.messages, 0),
+		totalDocuments: projects.reduce((sum, p) => sum + p._count.documents, 0),
+	};
+
 	return (
 		<DashboardShell
 			title="Главная страница"
@@ -45,7 +56,10 @@ export default async function DashboardPage() {
 		>
 			{/* Блок с проектами */}
 			<div className="mb-8">
-				<h2 className="text-xl font-semibold mb-4">Ваши проекты</h2>
+				<div className="flex items-center justify-between mb-4">
+					<h2 className="text-xl font-semibold">Ваши проекты</h2>
+					<ClearAllProjectsButton projectsStats={projectsStats} />
+				</div>
 				{projects.length === 0 ? (
 					<Card>
 						<CardHeader>
@@ -66,34 +80,7 @@ export default async function DashboardPage() {
 				) : (
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 						{projects.map((project) => (
-							<Card
-								key={project.id}
-								className="hover:shadow-lg transition-shadow"
-							>
-								<CardHeader>
-									<CardTitle className="flex items-center justify-between">
-										<span className="truncate">{project.title}</span>
-									</CardTitle>
-									<CardDescription>
-										{project.type === "apartment" && "Квартира"}
-										{project.type === "house" && "Дом"}
-										{project.type === "office" && "Офис"}
-										{!project.type && "Проект"}
-										{project.area && ` • ${project.area} м²`}
-									</CardDescription>
-								</CardHeader>
-								<CardContent>
-									<div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-										<span>{project._count.plans} вариантов</span>
-										<span>{project._count.messages} сообщений</span>
-									</div>
-									<Button asChild className="w-full" variant="outline">
-										<Link href={`/dashboard/projects/${project.id}`}>
-											Открыть проект
-										</Link>
-									</Button>
-								</CardContent>
-							</Card>
+							<ProjectCard key={project.id} project={project} />
 						))}
 						{/* Карточка для создания нового проекта */}
 						<Card className="border-dashed hover:shadow-lg transition-shadow cursor-pointer">
@@ -115,6 +102,22 @@ export default async function DashboardPage() {
 						</Card>
 					</div>
 				)}
+			</div>
+
+			{/* Загрузка шаблонов */}
+			<div className="mb-8">
+				<Card>
+					<CardHeader>
+						<CardTitle>Готовые планировки</CardTitle>
+						<CardDescription>
+							Загрузите готовые шаблоны планировок: однокомнатная,
+							двухкомнатная, трехкомнатная квартиры, студия и другие варианты
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<LoadTemplatesButton />
+					</CardContent>
+				</Card>
 			</div>
 
 			{/* Быстрые действия */}

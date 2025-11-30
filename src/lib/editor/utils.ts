@@ -153,6 +153,11 @@ export const DEFAULT_WALL_THICKNESS = {
 }
 
 /**
+ * Дефолтная высота стены в метрах
+ */
+export const DEFAULT_WALL_HEIGHT = 2.7 // стандартная высота для жилых помещений
+
+/**
  * Дефолтные размеры проёмов в мм
  */
 export const DEFAULT_DOOR_SIZE = {
