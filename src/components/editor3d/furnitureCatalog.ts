@@ -1,229 +1,309 @@
 /**
- * Каталог мебели с GLB моделями
+ * Каталог 3D-моделей мебели
+ * Описывает метаданные для моделей, лежащих в /public/furniture/
+ * ВСЕ модели в этом каталоге должны соответствовать реальным .glb файлам в /public/furniture/
  */
 
 export interface FurnitureCatalogItem {
-	id: string;
-	name: string;
-	category: string;
-	modelPath: string;
-	defaultSize: {
-		width: number; // метры
-		depth: number; // метры
-		height: number; // метры
+	id: string; // ключ, который будет использоваться в Furniture.type или отдельном поле
+	name: string; // читаемое название ("Диван 3-местный", "Кровать 160", "Стол обеденный" и т.п.)
+	category: string; // "sofa" | "bed" | "table" | "chair" | "wardrobe" | "appliance" | "bathroom" | "tv"
+	modelPath: string; // путь вида "/furniture/sofa.glb" (относительно /public/)
+	defaultFootprint: {
+		width: number; // метры (по оси X в плане)
+		depth: number; // метры (по оси Z/по Y плана)
 	};
-	icon?: string; // путь к иконке (опционально)
+	defaultHeight?: number; // метры (если известна высота)
 }
 
 /**
- * Категории мебели
- */
-export const FURNITURE_CATEGORIES = [
-	"Диваны",
-	"Кровати",
-	"Столы",
-	"Стулья",
-	"Шкафы",
-	"Кухонная мебель",
-	"Сантехника",
-	"Техника",
-	"Другое",
-] as const;
-
-/**
- * Каталог мебели
+ * Статический каталог мебели
+ * modelPath ВСЕГДА указывает на .glb в /public/furniture/....
+ * Все модели в этом массиве должны существовать в /public/furniture/
  */
 export const FURNITURE_CATALOG: FurnitureCatalogItem[] = [
 	// Диваны
 	{
-		id: "sofa-1",
+		id: "sofa",
 		name: "Диван",
-		category: "Диваны",
+		category: "sofa",
 		modelPath: "/furniture/Sofa.glb",
-		defaultSize: { width: 2.2, depth: 0.9, height: 0.85 },
+		defaultFootprint: {
+			width: 2.0, // метры
+			depth: 0.9, // метры
+		},
+		defaultHeight: 0.85,
 	},
-	{
-		id: "hauga-1",
-		name: "Хауга",
-		category: "Диваны",
-		modelPath: "/furniture/Hauga.glb",
-		defaultSize: { width: 2.0, depth: 0.9, height: 0.85 },
-	},
-
 	// Кровати
 	{
-		id: "bed-1",
+		id: "bed",
 		name: "Кровать",
-		category: "Кровати",
+		category: "bed",
 		modelPath: "/furniture/bed.glb",
-		defaultSize: { width: 1.6, depth: 2.0, height: 0.5 },
+		defaultFootprint: {
+			width: 1.6, // метры
+			depth: 2.0, // метры
+		},
+		defaultHeight: 0.5,
 	},
-	{
-		id: "kleppstad-1",
-		name: "Клеппстад",
-		category: "Кровати",
-		modelPath: "/furniture/Kleppstad.glb",
-		defaultSize: { width: 1.4, depth: 2.0, height: 0.5 },
-	},
-
 	// Столы
 	{
-		id: "coffee-table-1",
-		name: "Журнальный стол",
-		category: "Столы",
-		modelPath: "/furniture/coffee_table.glb",
-		defaultSize: { width: 1.2, depth: 0.6, height: 0.4 },
-	},
-	{
-		id: "sandsberg-table-1",
-		name: "Стол Сандсберг",
-		category: "Столы",
-		modelPath: "/furniture/sandsberg_table.glb",
-		defaultSize: { width: 1.2, depth: 0.6, height: 0.75 },
-	},
-	{
-		id: "table-1",
+		id: "table",
 		name: "Стол",
-		category: "Столы",
+		category: "table",
 		modelPath: "/furniture/table.glb",
-		defaultSize: { width: 1.0, depth: 0.6, height: 0.75 },
+		defaultFootprint: {
+			width: 1.2, // метры
+			depth: 0.8, // метры
+		},
+		defaultHeight: 0.75,
 	},
 	{
-		id: "table-001-1",
-		name: "Стол 001",
-		category: "Столы",
+		id: "table_001",
+		name: "Стол обеденный",
+		category: "table",
 		modelPath: "/furniture/table_001.glb",
-		defaultSize: { width: 1.2, depth: 0.7, height: 0.75 },
+		defaultFootprint: {
+			width: 1.5, // метры
+			depth: 0.9, // метры
+		},
+		defaultHeight: 0.75,
 	},
 	{
-		id: "table-pinus-1",
-		name: "Стол Пинус",
-		category: "Столы",
+		id: "table_pinus",
+		name: "Стол сосновый",
+		category: "table",
 		modelPath: "/furniture/table_pinus.glb",
-		defaultSize: { width: 1.0, depth: 0.6, height: 0.75 },
+		defaultFootprint: {
+			width: 1.2, // метры
+			depth: 0.7, // метры
+		},
+		defaultHeight: 0.75,
 	},
-
+	{
+		id: "coffee_table",
+		name: "Журнальный столик",
+		category: "table",
+		modelPath: "/furniture/coffee_table.glb",
+		defaultFootprint: {
+			width: 1.0, // метры
+			depth: 0.6, // метры
+		},
+		defaultHeight: 0.4,
+	},
+	{
+		id: "sandsberg_table",
+		name: "Стол Sandsberg",
+		category: "table",
+		modelPath: "/furniture/sandsberg_table.glb",
+		defaultFootprint: {
+			width: 1.4, // метры
+			depth: 0.8, // метры
+		},
+		defaultHeight: 0.75,
+	},
 	// Стулья
 	{
-		id: "chair-1",
+		id: "chair",
 		name: "Стул",
-		category: "Стулья",
+		category: "chair",
 		modelPath: "/furniture/Chair.glb",
-		defaultSize: { width: 0.5, depth: 0.5, height: 0.9 },
+		defaultFootprint: {
+			width: 0.5, // метры
+			depth: 0.5, // метры
+		},
+		defaultHeight: 0.9,
 	},
 	{
-		id: "wooden-chair-1",
+		id: "wooden_chair",
 		name: "Деревянный стул",
-		category: "Стулья",
+		category: "chair",
 		modelPath: "/furniture/wooden_chair.glb",
-		defaultSize: { width: 0.5, depth: 0.5, height: 0.9 },
+		defaultFootprint: {
+			width: 0.5, // метры
+			depth: 0.5, // метры
+		},
+		defaultHeight: 0.9,
 	},
-
-	// Шкафы
+	// Шкафы и тумбы
 	{
-		id: "tv-cabinet-1",
-		name: "ТВ тумба",
-		category: "Шкафы",
+		id: "tv_cabinet",
+		name: "ТВ-тумба",
+		category: "wardrobe",
 		modelPath: "/furniture/tv_cabinet.glb",
-		defaultSize: { width: 1.5, depth: 0.4, height: 0.5 },
+		defaultFootprint: {
+			width: 1.5, // метры
+			depth: 0.4, // метры
+		},
+		defaultHeight: 0.5,
 	},
 	{
-		id: "shoe-rack-1",
+		id: "hauga",
+		name: "Шкаф Hauga",
+		category: "wardrobe",
+		modelPath: "/furniture/Hauga.glb",
+		defaultFootprint: {
+			width: 1.2, // метры
+			depth: 0.4, // метры
+		},
+		defaultHeight: 1.8,
+	},
+	{
+		id: "kleppstad",
+		name: "Шкаф Kleppstad",
+		category: "wardrobe",
+		modelPath: "/furniture/Kleppstad.glb",
+		defaultFootprint: {
+			width: 1.0, // метры
+			depth: 0.4, // метры
+		},
+		defaultHeight: 1.8,
+	},
+	{
+		id: "shoe_rack",
 		name: "Обувница",
-		category: "Шкафы",
+		category: "wardrobe",
 		modelPath: "/furniture/shoe_rack.glb",
-		defaultSize: { width: 0.8, depth: 0.35, height: 1.0 },
+		defaultFootprint: {
+			width: 0.8, // метры
+			depth: 0.3, // метры
+		},
+		defaultHeight: 0.9,
 	},
-
-	// Кухонная мебель
 	{
-		id: "kitchen-cabinet-1",
+		id: "kitchen_cabinet",
 		name: "Кухонный шкаф",
-		category: "Кухонная мебель",
+		category: "wardrobe",
 		modelPath: "/furniture/kitchen_cabinet.glb",
-		defaultSize: { width: 0.6, depth: 0.6, height: 0.9 },
+		defaultFootprint: {
+			width: 0.6, // метры
+			depth: 0.6, // метры
+		},
+		defaultHeight: 0.9,
 	},
 	{
-		id: "kitchen-corner-cabinet-1",
+		id: "kitchen_corner_cabinet",
 		name: "Угловой кухонный шкаф",
-		category: "Кухонная мебель",
+		category: "wardrobe",
 		modelPath: "/furniture/kitchen_corner_cabinet.glb",
-		defaultSize: { width: 0.9, depth: 0.9, height: 0.9 },
+		defaultFootprint: {
+			width: 0.9, // метры
+			depth: 0.9, // метры
+		},
+		defaultHeight: 0.9,
 	},
-	{
-		id: "stove-top-1",
-		name: "Варочная панель",
-		category: "Кухонная мебель",
-		modelPath: "/furniture/stove_top.glb",
-		defaultSize: { width: 0.6, depth: 0.6, height: 0.1 },
-	},
-
 	// Техника
 	{
-		id: "fridge-1",
-		name: "Холодильник",
-		category: "Техника",
-		modelPath: "/furniture/Firdge.glb",
-		defaultSize: { width: 0.6, depth: 0.6, height: 1.8 },
-	},
-	{
-		id: "double-fridge-1",
-		name: "Двухкамерный холодильник",
-		category: "Техника",
-		modelPath: "/furniture/double_firdge.glb",
-		defaultSize: { width: 0.7, depth: 0.7, height: 1.8 },
-	},
-	{
-		id: "washer-1",
-		name: "Стиральная машина",
-		category: "Техника",
-		modelPath: "/furniture/Washer.glb",
-		defaultSize: { width: 0.6, depth: 0.6, height: 0.85 },
-	},
-	{
-		id: "tv-1",
+		id: "generic_modern_tv",
 		name: "Телевизор",
-		category: "Техника",
+		category: "tv",
 		modelPath: "/furniture/generic_modern_tv.glb",
-		defaultSize: { width: 1.2, depth: 0.1, height: 0.7 },
+		defaultFootprint: {
+			width: 1.2, // метры
+			depth: 0.1, // метры
+		},
+		defaultHeight: 0.7,
 	},
-
+	{
+		id: "fridge",
+		name: "Холодильник",
+		category: "appliance",
+		modelPath: "/furniture/Firdge.glb",
+		defaultFootprint: {
+			width: 0.6, // метры
+			depth: 0.6, // метры
+		},
+		defaultHeight: 1.8,
+	},
+	{
+		id: "double_fridge",
+		name: "Двухкамерный холодильник",
+		category: "appliance",
+		modelPath: "/furniture/double_firdge.glb",
+		defaultFootprint: {
+			width: 0.9, // метры
+			depth: 0.7, // метры
+		},
+		defaultHeight: 1.8,
+	},
+	{
+		id: "washer",
+		name: "Стиральная машина",
+		category: "appliance",
+		modelPath: "/furniture/Washer.glb",
+		defaultFootprint: {
+			width: 0.6, // метры
+			depth: 0.6, // метры
+		},
+		defaultHeight: 0.85,
+	},
+	{
+		id: "stove_top",
+		name: "Варочная панель",
+		category: "appliance",
+		modelPath: "/furniture/stove_top.glb",
+		defaultFootprint: {
+			width: 0.6, // метры
+			depth: 0.6, // метры
+		},
+		defaultHeight: 0.1,
+	},
 	// Сантехника
 	{
-		id: "bathroom-sink-1",
+		id: "bathroom_sink",
 		name: "Раковина",
-		category: "Сантехника",
+		category: "bathroom",
 		modelPath: "/furniture/bathroom_sink.glb",
-		defaultSize: { width: 0.6, depth: 0.5, height: 0.85 },
+		defaultFootprint: {
+			width: 0.6, // метры
+			depth: 0.5, // метры
+		},
+		defaultHeight: 0.85,
 	},
 	{
-		id: "bathtub-1",
+		id: "standard_bathtub",
 		name: "Ванна",
-		category: "Сантехника",
+		category: "bathroom",
 		modelPath: "/furniture/standard_bathtub.glb",
-		defaultSize: { width: 1.7, depth: 0.7, height: 0.6 },
+		defaultFootprint: {
+			width: 1.7, // метры
+			depth: 0.7, // метры
+		},
+		defaultHeight: 0.6,
 	},
 	{
-		id: "toilet-1",
+		id: "toilet_seat",
 		name: "Унитаз",
-		category: "Сантехника",
+		category: "bathroom",
 		modelPath: "/furniture/toilet_seat.glb",
-		defaultSize: { width: 0.4, depth: 0.5, height: 0.4 },
+		defaultFootprint: {
+			width: 0.4, // метры
+			depth: 0.5, // метры
+		},
+		defaultHeight: 0.4,
 	},
 ];
 
 /**
- * Получить мебель по категории
+ * Находит элемент каталога по типу мебели
+ * @param type - тип мебели из Furniture.type
+ * @returns элемент каталога или undefined
  */
-export function getFurnitureByCategory(
-	category: string
-): FurnitureCatalogItem[] {
-	return FURNITURE_CATALOG.filter((item) => item.category === category);
+export function getFurnitureItemByType(
+	type: string
+): FurnitureCatalogItem | undefined {
+	return FURNITURE_CATALOG.find(
+		(item) => item.id === type || item.category === type
+	);
 }
 
 /**
- * Получить мебель по ID
+ * Находит элемент каталога по ID
+ * @param id - ID элемента каталога
+ * @returns элемент каталога или undefined
  */
-export function getFurnitureById(id: string): FurnitureCatalogItem | undefined {
+export function getFurnitureItemById(
+	id: string
+): FurnitureCatalogItem | undefined {
 	return FURNITURE_CATALOG.find((item) => item.id === id);
 }

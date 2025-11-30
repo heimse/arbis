@@ -69,14 +69,22 @@ function EditorContent({
 					// Преобразуем данные из формата базы данных в формат editorStore
 					const planData = data.planData;
 
+					// Конвертируем base64 data URLs обратно в blob URLs
+					const { convertBase64ToBlobUrls } = await import(
+						"@/lib/editor/textureUtils"
+					);
+					const planDataWithBlobUrls = convertBase64ToBlobUrls(
+						planData
+					) as typeof planData;
+
 					console.log("Загрузка плана:", {
-						nodes: planData.nodes?.length || 0,
-						walls: planData.walls?.length || 0,
-						doors: planData.doors?.length || 0,
-						windows: planData.windows?.length || 0,
-						rooms: planData.rooms?.length || 0,
-						furniture: planData.furniture?.length || 0,
-						dimensions: planData.dimensions?.length || 0,
+						nodes: planDataWithBlobUrls.nodes?.length || 0,
+						walls: planDataWithBlobUrls.walls?.length || 0,
+						doors: planDataWithBlobUrls.doors?.length || 0,
+						windows: planDataWithBlobUrls.windows?.length || 0,
+						rooms: planDataWithBlobUrls.rooms?.length || 0,
+						furniture: planDataWithBlobUrls.furniture?.length || 0,
+						dimensions: planDataWithBlobUrls.dimensions?.length || 0,
 					});
 
 					// Очищаем текущее состояние
@@ -86,71 +94,74 @@ function EditorContent({
 					await new Promise((resolve) => setTimeout(resolve, 10));
 
 					// Импортируем слои
-					if (Array.isArray(planData.layers)) {
-						planData.layers.forEach((layer: any) => {
+					if (Array.isArray(planDataWithBlobUrls.layers)) {
+						planDataWithBlobUrls.layers.forEach((layer: any) => {
 							dispatch({ type: "UPDATE_LAYER", id: layer.id, updates: layer });
 						});
 					}
 
 					// Импортируем узлы (должны быть первыми, так как стены ссылаются на них)
-					if (Array.isArray(planData.nodes)) {
-						planData.nodes.forEach((node: any) => {
+					if (Array.isArray(planDataWithBlobUrls.nodes)) {
+						planDataWithBlobUrls.nodes.forEach((node: any) => {
 							dispatch({ type: "ADD_NODE", node });
 						});
 					}
 
 					// Импортируем стены (после узлов)
-					if (Array.isArray(planData.walls)) {
-						planData.walls.forEach((wall: any) => {
+					if (Array.isArray(planDataWithBlobUrls.walls)) {
+						planDataWithBlobUrls.walls.forEach((wall: any) => {
 							dispatch({ type: "ADD_WALL", wall });
 						});
 					}
 
 					// Импортируем двери (после стен)
-					if (Array.isArray(planData.doors)) {
-						planData.doors.forEach((door: any) => {
+					if (Array.isArray(planDataWithBlobUrls.doors)) {
+						planDataWithBlobUrls.doors.forEach((door: any) => {
 							dispatch({ type: "ADD_DOOR", door });
 						});
 					}
 
 					// Импортируем окна (после стен)
-					if (Array.isArray(planData.windows)) {
-						planData.windows.forEach((window: any) => {
+					if (Array.isArray(planDataWithBlobUrls.windows)) {
+						planDataWithBlobUrls.windows.forEach((window: any) => {
 							dispatch({ type: "ADD_WINDOW", window });
 						});
 					}
 
 					// Импортируем комнаты
-					if (Array.isArray(planData.rooms)) {
-						planData.rooms.forEach((room: any) => {
+					if (Array.isArray(planDataWithBlobUrls.rooms)) {
+						planDataWithBlobUrls.rooms.forEach((room: any) => {
 							dispatch({ type: "ADD_ROOM", room });
 						});
 					}
 
 					// Импортируем мебель
-					if (Array.isArray(planData.furniture)) {
-						planData.furniture.forEach((furniture: any) => {
+					if (Array.isArray(planDataWithBlobUrls.furniture)) {
+						planDataWithBlobUrls.furniture.forEach((furniture: any) => {
 							dispatch({ type: "ADD_FURNITURE", furniture });
 						});
 					}
 
 					// Импортируем размерные линии
-					if (Array.isArray(planData.dimensions)) {
-						planData.dimensions.forEach((dimension: any) => {
+					if (Array.isArray(planDataWithBlobUrls.dimensions)) {
+						planDataWithBlobUrls.dimensions.forEach((dimension: any) => {
 							dispatch({ type: "ADD_DIMENSION", dimension });
 						});
 					}
 
 					// Импортируем камеру
-					if (planData.camera) {
-						dispatch({ type: "SET_CAMERA", camera: planData.camera });
+					if (planDataWithBlobUrls.camera) {
+						dispatch({
+							type: "SET_CAMERA",
+							camera: planDataWithBlobUrls.camera,
+						});
 					}
 
 					// Импортируем фоновое изображение
-					if (planData.backgroundImage !== undefined) {
+					if (planDataWithBlobUrls.backgroundImage !== undefined) {
 						dispatch({
 							type: "SET_BACKGROUND",
-							background: planData.backgroundImage,
+							background: planDataWithBlobUrls.backgroundImage,
 						});
 					}
 				} else {
@@ -316,7 +327,7 @@ function EditorContent({
 		if (!file) return;
 
 		const reader = new FileReader();
-		reader.onload = (e) => {
+		reader.onload = async (e) => {
 			try {
 				const jsonData = e.target?.result as string;
 				const importedData = JSON.parse(jsonData);
@@ -326,77 +337,85 @@ function EditorContent({
 					throw new Error("Неверный формат файла");
 				}
 
+				// Конвертируем base64 data URLs обратно в blob URLs
+				const { convertBase64ToBlobUrls } = await import(
+					"@/lib/editor/textureUtils"
+				);
+				const dataWithBlobUrls = convertBase64ToBlobUrls(
+					importedData
+				) as typeof importedData;
+
 				// Очищаем текущее состояние (кроме слоев, настроек и камеры)
 				dispatch({ type: "CLEAR_ALL" });
 
 				// Импортируем слои сначала (обновляем существующие)
 				// CLEAR_ALL сохраняет слои, поэтому они должны существовать
-				if (Array.isArray(importedData.layers)) {
-					importedData.layers.forEach((layer: any) => {
+				if (Array.isArray(dataWithBlobUrls.layers)) {
+					dataWithBlobUrls.layers.forEach((layer: any) => {
 						// UPDATE_LAYER безопасно обработает случай, если слоя нет
 						dispatch({ type: "UPDATE_LAYER", id: layer.id, updates: layer });
 					});
 				}
 
 				// Импортируем узлы (должны быть первыми, так как стены ссылаются на них)
-				if (Array.isArray(importedData.nodes)) {
-					importedData.nodes.forEach((node: any) => {
+				if (Array.isArray(dataWithBlobUrls.nodes)) {
+					dataWithBlobUrls.nodes.forEach((node: any) => {
 						dispatch({ type: "ADD_NODE", node });
 					});
 				}
 
 				// Импортируем стены (после узлов)
-				if (Array.isArray(importedData.walls)) {
-					importedData.walls.forEach((wall: any) => {
+				if (Array.isArray(dataWithBlobUrls.walls)) {
+					dataWithBlobUrls.walls.forEach((wall: any) => {
 						dispatch({ type: "ADD_WALL", wall });
 					});
 				}
 
 				// Импортируем двери (после стен)
-				if (Array.isArray(importedData.doors)) {
-					importedData.doors.forEach((door: any) => {
+				if (Array.isArray(dataWithBlobUrls.doors)) {
+					dataWithBlobUrls.doors.forEach((door: any) => {
 						dispatch({ type: "ADD_DOOR", door });
 					});
 				}
 
 				// Импортируем окна (после стен)
-				if (Array.isArray(importedData.windows)) {
-					importedData.windows.forEach((window: any) => {
+				if (Array.isArray(dataWithBlobUrls.windows)) {
+					dataWithBlobUrls.windows.forEach((window: any) => {
 						dispatch({ type: "ADD_WINDOW", window });
 					});
 				}
 
 				// Импортируем комнаты
-				if (Array.isArray(importedData.rooms)) {
-					importedData.rooms.forEach((room: any) => {
+				if (Array.isArray(dataWithBlobUrls.rooms)) {
+					dataWithBlobUrls.rooms.forEach((room: any) => {
 						dispatch({ type: "ADD_ROOM", room });
 					});
 				}
 
 				// Импортируем мебель
-				if (Array.isArray(importedData.furniture)) {
-					importedData.furniture.forEach((furniture: any) => {
+				if (Array.isArray(dataWithBlobUrls.furniture)) {
+					dataWithBlobUrls.furniture.forEach((furniture: any) => {
 						dispatch({ type: "ADD_FURNITURE", furniture });
 					});
 				}
 
 				// Импортируем размерные линии
-				if (Array.isArray(importedData.dimensions)) {
-					importedData.dimensions.forEach((dimension: any) => {
+				if (Array.isArray(dataWithBlobUrls.dimensions)) {
+					dataWithBlobUrls.dimensions.forEach((dimension: any) => {
 						dispatch({ type: "ADD_DIMENSION", dimension });
 					});
 				}
 
 				// Импортируем камеру
-				if (importedData.camera) {
-					dispatch({ type: "SET_CAMERA", camera: importedData.camera });
+				if (dataWithBlobUrls.camera) {
+					dispatch({ type: "SET_CAMERA", camera: dataWithBlobUrls.camera });
 				}
 
 				// Импортируем фоновое изображение
-				if (importedData.backgroundImage !== undefined) {
+				if (dataWithBlobUrls.backgroundImage !== undefined) {
 					dispatch({
 						type: "SET_BACKGROUND",
-						background: importedData.backgroundImage,
+						background: dataWithBlobUrls.backgroundImage,
 					});
 				}
 

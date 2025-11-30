@@ -729,7 +729,8 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
 				position,
 				width: DEFAULT_DOOR_SIZE.width,
 				height: DEFAULT_DOOR_SIZE.height,
-				openDirection: "right",
+				hingeSide: "right", // дефолт: петли справа
+				swingDirection: "inside", // дефолт: открывается внутрь
 				layerId: "layer-openings",
 			};
 			dispatch({ type: "ADD_DOOR", door });

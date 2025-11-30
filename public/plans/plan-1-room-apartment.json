@@ -1,0 +1,301 @@
+{
+	"nodes": [
+		{ "id": "node-1", "x": 0, "y": 0, "connectedWalls": ["wall-1", "wall-4"] },
+		{ "id": "node-2", "x": 12, "y": 0, "connectedWalls": ["wall-1", "wall-2"] },
+		{ "id": "node-3", "x": 12, "y": 9, "connectedWalls": ["wall-2", "wall-3"] },
+		{ "id": "node-4", "x": 0, "y": 9, "connectedWalls": ["wall-3", "wall-4"] },
+
+		{
+			"id": "node-5",
+			"x": 7.5,
+			"y": 0,
+			"connectedWalls": ["wall-5", "wall-1"]
+		},
+		{ "id": "node-6", "x": 7.5, "y": 9, "connectedWalls": ["wall-5", "wall-3"] }
+	],
+
+	"walls": [
+		{
+			"id": "wall-1",
+			"startNodeId": "node-1",
+			"endNodeId": "node-2",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-2",
+			"startNodeId": "node-2",
+			"endNodeId": "node-3",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-3",
+			"startNodeId": "node-3",
+			"endNodeId": "node-4",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-4",
+			"startNodeId": "node-4",
+			"endNodeId": "node-1",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+
+		{
+			"id": "wall-5",
+			"startNodeId": "node-5",
+			"endNodeId": "node-6",
+			"type": "partition",
+			"thickness": 100,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		}
+	],
+
+	"doors": [
+		{
+			"id": "door-1",
+			"wallId": "wall-5",
+			"position": 0.45,
+			"width": 900,
+			"height": 2100,
+			"hingeSide": "right",
+			"swingDirection": "inside",
+			"layerId": "layer-openings"
+		},
+		{
+			"id": "door-2",
+			"wallId": "wall-4",
+			"position": 0.3,
+			"width": 900,
+			"height": 2100,
+			"hingeSide": "left",
+			"swingDirection": "inside",
+			"layerId": "layer-openings"
+		},
+		{
+			"id": "door-3",
+			"wallId": "wall-3",
+			"position": 0.65,
+			"width": 800,
+			"height": 2100,
+			"hingeSide": "left",
+			"swingDirection": "inside",
+			"layerId": "layer-openings"
+		}
+	],
+
+	"windows": [
+		{
+			"id": "window-1",
+			"wallId": "wall-1",
+			"position": 0.65,
+			"width": 2600,
+			"height": 1400,
+			"sillHeight": 850,
+			"layerId": "layer-openings"
+		},
+		{
+			"id": "window-2",
+			"wallId": "wall-2",
+			"position": 0.5,
+			"width": 2000,
+			"height": 1400,
+			"sillHeight": 850,
+			"layerId": "layer-openings"
+		},
+		{
+			"id": "window-3",
+			"wallId": "wall-3",
+			"position": 0.2,
+			"width": 1900,
+			"height": 1400,
+			"sillHeight": 850,
+			"layerId": "layer-openings"
+		}
+	],
+
+	"rooms": [
+		{
+			"id": "room-1",
+			"name": "Гостиная–Кухня",
+			"polygon": [
+				{ "x": 0, "y": 0 },
+				{ "x": 7.5, "y": 0 },
+				{ "x": 7.5, "y": 9 },
+				{ "x": 0, "y": 9 },
+				{ "x": 0, "y": 0 }
+			],
+			"floorFillMode": "texture",
+			"floorTexture": "/textures/floors/parquet.jpg",
+			"floorTextureScale": { "x": 3, "y": 3 }
+		},
+		{
+			"id": "room-2",
+			"name": "Спальня",
+			"polygon": [
+				{ "x": 7.5, "y": 0 },
+				{ "x": 12, "y": 0 },
+				{ "x": 12, "y": 9 },
+				{ "x": 7.5, "y": 9 },
+				{ "x": 7.5, "y": 0 }
+			],
+			"floorFillMode": "texture",
+			"floorTexture": "/textures/floors/laminate-light.jpg",
+			"floorTextureScale": { "x": 2, "y": 2 }
+		}
+	],
+
+	"furniture": [
+		{
+			"id": "f1",
+			"type": "sofa",
+			"position": { "x": 1.8, "y": 5.2 },
+			"size": { "width": 2.4, "height": 1.0 },
+			"height": 0.85,
+			"rotation": 0,
+			"layerId": "layer-furniture"
+		},
+		{
+			"id": "f2",
+			"type": "tv_cabinet",
+			"position": { "x": 0.8, "y": 3.3 },
+			"size": { "width": 2.2, "height": 0.45 },
+			"height": 0.6,
+			"rotation": 0,
+			"layerId": "layer-furniture"
+		},
+		{
+			"id": "f3",
+			"type": "generic_modern_tv",
+			"position": { "x": 1.0, "y": 3.1 },
+			"size": { "width": 2.0, "height": 0.12 },
+			"height": 0.8,
+			"rotation": 0,
+			"layerId": "layer-furniture"
+		},
+		{
+			"id": "f4",
+			"type": "coffee_table",
+			"position": { "x": 2.1, "y": 4.5 },
+			"size": { "width": 1.1, "height": 0.7 },
+			"height": 0.45,
+			"rotation": 0,
+			"layerId": "layer-furniture"
+		},
+		{
+			"id": "f5",
+			"type": "dining_table",
+			"position": { "x": 5.5, "y": 6.8 },
+			"size": { "width": 1.6, "height": 0.9 },
+			"height": 0.75,
+			"rotation": 0,
+			"layerId": "layer-furniture"
+		},
+		{
+			"id": "f6",
+			"type": "chair",
+			"position": { "x": 5.0, "y": 6.2 },
+			"size": { "width": 0.5, "height": 0.5 },
+			"height": 0.85,
+			"rotation": 0,
+			"layerId": "layer-furniture"
+		},
+		{
+			"id": "f7",
+			"type": "chair",
+			"position": { "x": 6.0, "y": 6.2 },
+			"size": { "width": 0.5, "height": 0.5 },
+			"height": 0.85,
+			"rotation": 180,
+			"layerId": "layer-furniture"
+		},
+
+		{
+			"id": "f8",
+			"type": "double_bed",
+			"position": { "x": 9.5, "y": 4.4 },
+			"size": { "width": 2.0, "height": 2.1 },
+			"height": 0.5,
+			"rotation": 90,
+			"layerId": "layer-furniture"
+		},
+		{
+			"id": "f9",
+			"type": "wardrobe",
+			"position": { "x": 11.0, "y": 2.0 },
+			"size": { "width": 0.7, "height": 2.5 },
+			"height": 2.2,
+			"rotation": 180,
+			"layerId": "layer-furniture"
+		},
+		{
+			"id": "f10",
+			"type": "nightstand",
+			"position": { "x": 9.0, "y": 4.4 },
+			"size": { "width": 0.45, "height": 0.45 },
+			"height": 0.5,
+			"rotation": 90,
+			"layerId": "layer-furniture"
+		}
+	],
+
+	"dimensions": [],
+	"layers": [
+		{
+			"id": "layer-rooms",
+			"name": "Комнаты",
+			"visible": true,
+			"locked": false
+		},
+		{ "id": "layer-walls", "name": "Стены", "visible": true, "locked": false },
+		{
+			"id": "layer-openings",
+			"name": "Проёмы",
+			"visible": true,
+			"locked": false
+		},
+		{
+			"id": "layer-furniture",
+			"name": "Мебель",
+			"visible": true,
+			"locked": false
+		},
+		{
+			"id": "layer-dimensions",
+			"name": "Размеры",
+			"visible": true,
+			"locked": false
+		}
+	],
+
+	"camera": { "x": 6, "y": 4.5, "zoom": 45 },
+	"backgroundImage": null,
+	"gridSettings": {
+		"visible": true,
+		"spacing": 0.5,
+		"subdivisions": 5,
+		"color": "#e5e7eb",
+		"majorColor": "#d1d5db"
+	},
+
+	"planSettings": { "width": 20, "height": 20, "units": "meters", "scale": 50 },
+	"snapMode": {
+		"toGrid": true,
+		"toNodes": true,
+		"toWallMidpoints": true,
+		"toOrthogonal": true
+	},
+	"version": "1.0"
+}

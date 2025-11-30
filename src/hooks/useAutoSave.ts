@@ -16,7 +16,7 @@ interface UseAutoSaveOptions {
 
 /**
  * Хук для автоматического сохранения планировки
- * 
+ *
  * Сохраняет:
  * 1. После крупных действий (с debounce)
  * 2. Периодически каждые N минут
@@ -124,14 +124,22 @@ export function useAutoSave({
 				snapMode: state.snapMode,
 			};
 
+			// Конвертируем blob URLs в base64 для сохранения
+			const { convertBlobUrlsToBase64 } = await import(
+				"@/lib/editor/textureUtils"
+			);
+			const planDataWithBase64 = await convertBlobUrlsToBase64(planData);
+
 			const response = await fetch(`/api/projects/${projectId}/plan`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify({
-					planData,
-					versionName: `Автосохранение ${new Date().toLocaleTimeString("ru-RU")}`,
+					planData: planDataWithBase64,
+					versionName: `Автосохранение ${new Date().toLocaleTimeString(
+						"ru-RU"
+					)}`,
 				}),
 			});
 
@@ -242,4 +250,3 @@ export function useAutoSave({
 		isSaving: isSavingRef.current,
 	};
 }
-

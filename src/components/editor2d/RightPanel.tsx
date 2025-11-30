@@ -14,7 +14,14 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import type { Node, Wall, Door, Window } from "@/types/editor";
+import type {
+	Node,
+	Wall,
+	Door,
+	Window,
+	DoorHingeSide,
+	DoorSwingDirection,
+} from "@/types/editor";
 import { FurnitureCatalogPanel } from "./FurnitureCatalogPanel";
 
 export function RightPanel() {
@@ -34,7 +41,7 @@ export function RightPanel() {
 
 	// Автоматически открываем каталог при выборе инструмента мебели
 	React.useEffect(() => {
-		if (state.activeTool === 'furniture' && activeTab !== 'catalog') {
+		if (state.activeTool === "furniture" && activeTab !== "catalog") {
 			setActiveTab("catalog");
 		}
 	}, [state.activeTool]); // Убрали activeTab из зависимостей
@@ -483,6 +490,197 @@ function WallProperties() {
 				</div>
 			</div>
 
+			{/* Материал стены */}
+			<div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+				<div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+					Материал стены
+				</div>
+
+				{/* Режим заливки */}
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Режим заливки
+					</label>
+					<select
+						value={wall.fillMode ?? "color"}
+						onChange={(e) => {
+							dispatch({
+								type: "UPDATE_WALL",
+								id: wall.id,
+								updates: {
+									fillMode: e.target.value as "color" | "texture",
+								},
+							});
+						}}
+						className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+					>
+						<option value="color">Цвет</option>
+						<option value="texture">Текстура</option>
+					</select>
+				</div>
+
+				{/* Цвет стены */}
+				{wall.fillMode !== "texture" && (
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Цвет стены
+						</label>
+						<div className="flex gap-2">
+							<Input
+								type="color"
+								value={
+									wall.color ??
+									(wall.type === "load-bearing" ? "#374151" : "#9ca3af")
+								}
+								onChange={(e) => {
+									dispatch({
+										type: "UPDATE_WALL",
+										id: wall.id,
+										updates: { color: e.target.value },
+									});
+								}}
+								className="w-16 h-10 p-1 border border-gray-300 dark:border-gray-700 rounded-md cursor-pointer"
+							/>
+							<Input
+								type="text"
+								value={
+									wall.color ??
+									(wall.type === "load-bearing" ? "#374151" : "#9ca3af")
+								}
+								onChange={(e) => {
+									dispatch({
+										type: "UPDATE_WALL",
+										id: wall.id,
+										updates: { color: e.target.value },
+									});
+								}}
+								placeholder={
+									wall.type === "load-bearing" ? "#374151" : "#9ca3af"
+								}
+								className="flex-1"
+							/>
+						</div>
+					</div>
+				)}
+
+				{/* Текстура стены */}
+				{wall.fillMode === "texture" && (
+					<>
+						<div className="space-y-2">
+							<label className="text-sm text-gray-600 dark:text-gray-400">
+								Текстура стены
+							</label>
+							<div className="flex gap-2">
+								<Input
+									type="file"
+									accept="image/*"
+									onChange={(e) => {
+										const file = e.target.files?.[0];
+										if (file) {
+											const url = URL.createObjectURL(file);
+											dispatch({
+												type: "UPDATE_WALL",
+												id: wall.id,
+												updates: {
+													texture: url,
+													fillMode: "texture",
+												},
+											});
+										}
+									}}
+									className="flex-1 text-sm"
+								/>
+								{wall.texture && (
+									<button
+										type="button"
+										onClick={() => {
+											// Освобождаем blob URL
+											if (wall.texture?.startsWith("blob:")) {
+												URL.revokeObjectURL(wall.texture);
+											}
+											dispatch({
+												type: "UPDATE_WALL",
+												id: wall.id,
+												updates: {
+													texture: null,
+													fillMode: "color",
+												},
+											});
+										}}
+										className="px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
+									>
+										Удалить
+									</button>
+								)}
+							</div>
+							{wall.texture && (
+								<div className="mt-2">
+									<img
+										src={wall.texture}
+										alt="Предпросмотр текстуры"
+										className="w-full h-24 object-cover rounded-md border border-gray-300 dark:border-gray-700"
+									/>
+								</div>
+							)}
+						</div>
+
+						{/* Масштаб текстуры */}
+						{wall.texture && (
+							<div className="grid grid-cols-2 gap-2">
+								<div className="space-y-2">
+									<label className="text-sm text-gray-600 dark:text-gray-400">
+										Масштаб X
+									</label>
+									<Input
+										type="number"
+										value={wall.textureScale?.x ?? 1}
+										onChange={(e) => {
+											const scaleX = parseFloat(e.target.value) || 1;
+											dispatch({
+												type: "UPDATE_WALL",
+												id: wall.id,
+												updates: {
+													textureScale: {
+														x: scaleX,
+														y: wall.textureScale?.y ?? 1,
+													},
+												},
+											});
+										}}
+										step="0.1"
+										min="0.1"
+									/>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm text-gray-600 dark:text-gray-400">
+										Масштаб Y
+									</label>
+									<Input
+										type="number"
+										value={wall.textureScale?.y ?? 1}
+										onChange={(e) => {
+											const scaleY = parseFloat(e.target.value) || 1;
+											dispatch({
+												type: "UPDATE_WALL",
+												id: wall.id,
+												updates: {
+													textureScale: {
+														x: wall.textureScale?.x ?? 1,
+														y: scaleY,
+													},
+												},
+											});
+										}}
+										step="0.1"
+										min="0.1"
+									/>
+								</div>
+							</div>
+						)}
+					</>
+				)}
+			</div>
+
 			{/* Информация */}
 			<div className="pt-2 border-t border-gray-200 dark:border-gray-800">
 				<div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
@@ -501,6 +699,29 @@ function WallProperties() {
 	);
 }
 
+/**
+ * Нормализует дверь: извлекает hingeSide и swingDirection с учётом обратной совместимости
+ */
+function normalizeDoorOrientation(door: Door): {
+	hingeSide: DoorHingeSide;
+	swingDirection: DoorSwingDirection;
+} {
+	// Если уже есть новые поля - используем их
+	if (door.hingeSide && door.swingDirection) {
+		return {
+			hingeSide: door.hingeSide,
+			swingDirection: door.swingDirection,
+		};
+	}
+
+	// Миграция со старого формата
+	const hingeSide: DoorHingeSide =
+		door.hingeSide ?? door.openDirection ?? "right";
+	const swingDirection: DoorSwingDirection = door.swingDirection ?? "inside";
+
+	return { hingeSide, swingDirection };
+}
+
 function DoorProperties() {
 	const { state, dispatch } = useEditor();
 	const door = state.doors.get(state.selection.id!);
@@ -513,6 +734,9 @@ function DoorProperties() {
 	const startNode = state.nodes.get(wall.startNodeId);
 	const endNode = state.nodes.get(wall.endNodeId);
 	if (!startNode || !endNode) return null;
+
+	// Нормализуем ориентацию двери (миграция со старого формата)
+	const { hingeSide, swingDirection } = normalizeDoorOrientation(door);
 
 	// Вычисляем позицию двери
 	const doorPos = {
@@ -640,21 +864,43 @@ function DoorProperties() {
 
 				<div className="space-y-2">
 					<label className="text-sm text-gray-600 dark:text-gray-400">
-						Направление открывания
+						Сторона петель (относительно направления стены)
 					</label>
 					<select
-						value={door.openDirection}
+						value={hingeSide}
 						onChange={(e) => {
 							dispatch({
 								type: "UPDATE_DOOR",
 								id: door.id,
-								updates: { openDirection: e.target.value as "left" | "right" },
+								updates: { hingeSide: e.target.value as DoorHingeSide },
 							});
 						}}
 						className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md text-sm"
 					>
-						<option value="left">Влево</option>
-						<option value="right">Вправо</option>
+						<option value="left">Слева</option>
+						<option value="right">Справа</option>
+					</select>
+				</div>
+
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Направление открытия (внутрь / наружу)
+					</label>
+					<select
+						value={swingDirection}
+						onChange={(e) => {
+							dispatch({
+								type: "UPDATE_DOOR",
+								id: door.id,
+								updates: {
+									swingDirection: e.target.value as DoorSwingDirection,
+								},
+							});
+						}}
+						className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md text-sm"
+					>
+						<option value="inside">Внутрь</option>
+						<option value="outside">Наружу</option>
 					</select>
 				</div>
 			</div>
@@ -963,7 +1209,9 @@ function FurnitureProperties() {
 					</label>
 					<Input
 						type="number"
-						value={(furniture.height || getDefaultFurnitureHeight(furniture.type)).toFixed(2)}
+						value={(
+							furniture.height || getDefaultFurnitureHeight(furniture.type)
+						).toFixed(2)}
 						onChange={(e) => {
 							const height = parseFloat(e.target.value) || 0;
 							if (height > 0) {
@@ -1419,6 +1667,189 @@ function RoomProperties() {
 				</div>
 			</div>
 
+			{/* Пол комнаты */}
+			<div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+				<div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+					Пол комнаты
+				</div>
+
+				{/* Режим заливки */}
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Режим заливки
+					</label>
+					<select
+						value={room.floorFillMode ?? "color"}
+						onChange={(e) => {
+							dispatch({
+								type: "UPDATE_ROOM",
+								id: room.id,
+								updates: {
+									floorFillMode: e.target.value as "color" | "texture",
+								},
+							});
+						}}
+						className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+					>
+						<option value="color">Цвет</option>
+						<option value="texture">Текстура</option>
+					</select>
+				</div>
+
+				{/* Цвет пола */}
+				{room.floorFillMode !== "texture" && (
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Цвет пола
+						</label>
+						<div className="flex gap-2">
+							<Input
+								type="color"
+								value={room.floorColor ?? "#3b82f6"}
+								onChange={(e) => {
+									dispatch({
+										type: "UPDATE_ROOM",
+										id: room.id,
+										updates: { floorColor: e.target.value },
+									});
+								}}
+								className="w-16 h-10 p-1 border border-gray-300 dark:border-gray-700 rounded-md cursor-pointer"
+							/>
+							<Input
+								type="text"
+								value={room.floorColor ?? "#3b82f6"}
+								onChange={(e) => {
+									dispatch({
+										type: "UPDATE_ROOM",
+										id: room.id,
+										updates: { floorColor: e.target.value },
+									});
+								}}
+								placeholder="#3b82f6"
+								className="flex-1"
+							/>
+						</div>
+					</div>
+				)}
+
+				{/* Текстура пола */}
+				{room.floorFillMode === "texture" && (
+					<>
+						<div className="space-y-2">
+							<label className="text-sm text-gray-600 dark:text-gray-400">
+								Текстура пола
+							</label>
+							<div className="flex gap-2">
+								<Input
+									type="file"
+									accept="image/*"
+									onChange={(e) => {
+										const file = e.target.files?.[0];
+										if (file) {
+											const url = URL.createObjectURL(file);
+											dispatch({
+												type: "UPDATE_ROOM",
+												id: room.id,
+												updates: {
+													floorTexture: url,
+													floorFillMode: "texture",
+												},
+											});
+										}
+									}}
+									className="flex-1 text-sm"
+								/>
+								{room.floorTexture && (
+									<button
+										type="button"
+										onClick={() => {
+											// Освобождаем blob URL
+											if (room.floorTexture?.startsWith("blob:")) {
+												URL.revokeObjectURL(room.floorTexture);
+											}
+											dispatch({
+												type: "UPDATE_ROOM",
+												id: room.id,
+												updates: {
+													floorTexture: null,
+													floorFillMode: "color",
+												},
+											});
+										}}
+										className="px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
+									>
+										Удалить
+									</button>
+								)}
+							</div>
+							{room.floorTexture && (
+								<div className="mt-2">
+									<img
+										src={room.floorTexture}
+										alt="Предпросмотр текстуры"
+										className="w-full h-24 object-cover rounded-md border border-gray-300 dark:border-gray-700"
+									/>
+								</div>
+							)}
+						</div>
+
+						{/* Масштаб текстуры */}
+						{room.floorTexture && (
+							<div className="grid grid-cols-2 gap-2">
+								<div className="space-y-2">
+									<label className="text-sm text-gray-600 dark:text-gray-400">
+										Масштаб X
+									</label>
+									<Input
+										type="number"
+										value={room.floorTextureScale?.x ?? 1}
+										onChange={(e) => {
+											const scaleX = parseFloat(e.target.value) || 1;
+											dispatch({
+												type: "UPDATE_ROOM",
+												id: room.id,
+												updates: {
+													floorTextureScale: {
+														x: scaleX,
+														y: room.floorTextureScale?.y ?? 1,
+													},
+												},
+											});
+										}}
+										step="0.1"
+										min="0.1"
+									/>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm text-gray-600 dark:text-gray-400">
+										Масштаб Y
+									</label>
+									<Input
+										type="number"
+										value={room.floorTextureScale?.y ?? 1}
+										onChange={(e) => {
+											const scaleY = parseFloat(e.target.value) || 1;
+											dispatch({
+												type: "UPDATE_ROOM",
+												id: room.id,
+												updates: {
+													floorTextureScale: {
+														x: room.floorTextureScale?.x ?? 1,
+														y: scaleY,
+													},
+												},
+											});
+										}}
+										step="0.1"
+										min="0.1"
+									/>
+								</div>
+							</div>
+						)}
+					</>
+				)}
+			</div>
+
 			{/* Информация */}
 			<div className="pt-2 border-t border-gray-200 dark:border-gray-800">
 				<div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
@@ -1543,7 +1974,15 @@ function PlanSettings() {
 function LayersPanel() {
 	const { state, setSelection, dispatch } = useEditor();
 	const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-		new Set(["walls", "doors", "windows", "nodes", "rooms", "furniture", "dimensions"])
+		new Set([
+			"walls",
+			"doors",
+			"windows",
+			"nodes",
+			"rooms",
+			"furniture",
+			"dimensions",
+		])
 	);
 
 	const toggleGroup = (group: string) => {
@@ -1557,7 +1996,14 @@ function LayersPanel() {
 	};
 
 	const handleObjectClick = (
-		type: "node" | "wall" | "door" | "window" | "room" | "furniture" | "dimension",
+		type:
+			| "node"
+			| "wall"
+			| "door"
+			| "window"
+			| "room"
+			| "furniture"
+			| "dimension",
 		id: string
 	) => {
 		setSelection(type, id);
@@ -1813,7 +2259,9 @@ function LayersPanel() {
 												state.selection.type === "dimension" &&
 												state.selection.id === dimension.id
 											}
-											onClick={() => handleObjectClick("dimension", dimension.id)}
+											onClick={() =>
+												handleObjectClick("dimension", dimension.id)
+											}
 										/>
 									))}
 								</div>
