@@ -2,9 +2,9 @@ module.exports = {
 	apps: [
 		{
 			name: "buildplanner",
-			script: "npm",
+			script: "pnpm",
 			args: "start",
-			cwd: "/home/heimse/build/buildplanner", // project path on the server
+			cwd: "/home/heimse/build/arbis", // project path on the server
 			env: {
 				NODE_ENV: "production",
 				// add other env vars here
