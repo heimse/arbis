@@ -307,3 +307,4 @@ export function getFurnitureItemById(
 ): FurnitureCatalogItem | undefined {
 	return FURNITURE_CATALOG.find((item) => item.id === id);
 }
+

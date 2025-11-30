@@ -149,3 +149,4 @@ export function PlanCard({ plan }: PlanCardProps) {
 		</Card>
 	);
 }
+

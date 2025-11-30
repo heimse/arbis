@@ -425,19 +425,14 @@ function createWallSegments(
 function WallSegmentMesh({ segment }: { segment: WallSegment }) {
 	const wall = segment.wall;
 
-	if (!wall) {
-		console.error("WallSegmentMesh: wall is missing in segment", segment);
-		return null;
-	}
-
-	// Загружаем текстуру, если нужно
+	// Загружаем текстуру, если нужно (всегда вызываем хук, даже если wall null)
 	const baseTexture = useWallTexture(
-		wall.fillMode === "texture" ? wall.texture : null
+		wall?.fillMode === "texture" ? wall.texture : null
 	);
 
 	// Настраиваем текстуру с масштабом
 	const configuredTexture = useMemo(() => {
-		if (wall.fillMode === "texture" && wall.texture && baseTexture) {
+		if (wall?.fillMode === "texture" && wall.texture && baseTexture) {
 			const scaleX = wall.textureScale?.x ?? 1;
 			const scaleY = wall.textureScale?.y ?? 1;
 			baseTexture.repeat.set(scaleX, scaleY);
@@ -445,10 +440,12 @@ function WallSegmentMesh({ segment }: { segment: WallSegment }) {
 			return baseTexture;
 		}
 		return null;
-	}, [baseTexture, wall.fillMode, wall.texture, wall.textureScale]);
+	}, [baseTexture, wall?.fillMode, wall?.texture, wall?.textureScale]);
 
 	// Получаем параметры материала (fallback на дефолтные, если не заданы)
 	const materialProps = useMemo(() => {
+		if (!wall) return null;
+
 		if (wall.fillMode === "texture" && configuredTexture) {
 			return null; // Используем текстуру
 		}
@@ -465,11 +462,6 @@ function WallSegmentMesh({ segment }: { segment: WallSegment }) {
 		// Fallback на дефолтные значения по типу стены
 		return getWallMaterialProps(wall);
 	}, [wall, configuredTexture]);
-
-	// Определяем цвет для fallback
-	const fallbackColor =
-		materialProps?.color ??
-		(wall.type === "load-bearing" ? "#374151" : "#9ca3af");
 
 	// Размеры сегмента
 	const segmentWidth = segment.xEnd - segment.xStart;
@@ -495,6 +487,17 @@ function WallSegmentMesh({ segment }: { segment: WallSegment }) {
 			.addScaledVector(segment.basis.basis.zAxis, localPos.z);
 		return segment.basis.basis.origin.clone().add(rotated);
 	}, [segment, localX, localY, localZ]);
+
+	// Ранний возврат после всех хуков
+	if (!wall) {
+		console.error("WallSegmentMesh: wall is missing in segment", segment);
+		return null;
+	}
+
+	// Определяем цвет для fallback
+	const fallbackColor =
+		materialProps?.color ??
+		(wall.type === "load-bearing" ? "#374151" : "#9ca3af");
 
 	return (
 		<mesh

@@ -51,7 +51,7 @@ export default async function PlansPage() {
 							{projects.map((project) => (
 								<Button key={project.id} asChild variant="outline">
 									<Link href={`/dashboard/projects/${project.id}`}>
-										Открыть проект "{project.title}"
+										Открыть проект &quot;{project.title}&quot;
 									</Link>
 								</Button>
 							))}

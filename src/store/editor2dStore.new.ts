@@ -28,7 +28,7 @@ import {
 	updateNodeConnections,
 	removeWall,
 } from "@/lib/editor/walls";
-import { findEnclosedArea, createRoom } from "@/lib/editor/rooms";
+import { calculateRoomArea, calculateRoomPerimeter } from "@/lib/editor/rooms";
 
 /**
  * Доступные инструменты редактора
@@ -654,37 +654,37 @@ export const useEditor2DStore = create<Editor2DState>()(
 		// ========== КОМНАТЫ (ЛЕГАСИ) ==========
 		addRoom: (position) =>
 			set((state) => {
-				// Ищем замкнутую область стен, содержащую точку клика
-				const enclosedArea = findEnclosedArea(
-					position,
-					state.plan.walls,
-					state.plan.nodes
-				);
+				// Создаём прямоугольный полигон для комнаты
+				// Старый код создавал комнату 400x400, начиная с (position.x - 200, position.y - 200)
+				const startX = position.x - 200;
+				const startY = position.y - 200;
+				const width = 400;
+				const height = 400;
 
-				if (!enclosedArea) {
-					// Не удалось найти замкнутую область
-					// Можно показать уведомление пользователю
-					console.warn(
-						"Невозможно создать комнату: замкнутая область не найдена. Проверьте, что стены соединены узлами."
-					);
-					return;
-				}
+				const polygon: Point[] = [
+					{ x: startX, y: startY },
+					{ x: startX + width, y: startY },
+					{ x: startX + width, y: startY + height },
+					{ x: startX, y: startY + height },
+				];
 
-				// Находим слой для комнат
-				const roomsLayer = state.plan.layers.find(
-					(l) => l.id === "layer-rooms"
-				);
-				const layerId = roomsLayer?.id || "layer-rooms";
+				// Вычисляем площадь и периметр (предполагаем pixelsPerMeter = 80)
+				const pixelsPerMeter = 80;
+				const area = calculateRoomArea(polygon, pixelsPerMeter);
+				const perimeter = calculateRoomPerimeter(polygon, pixelsPerMeter);
 
-				// Создаём комнату
-				const pixelsPerMeter = state.plan.realWorldSize?.pixelsPerMeter || 80;
-				const newRoom = createRoom(
-					enclosedArea.polygon,
-					enclosedArea.wallIds,
-					pixelsPerMeter,
-					layerId
-				);
-
+				const newRoom: Room = {
+					id: nanoid(),
+					name: `Комната ${state.plan.rooms.length + 1}`,
+					polygon,
+					wallIds: [], // Пустой массив, так как комната создана не из стен
+					area,
+					perimeter,
+					roomType: "other",
+					floorLevel: 0,
+					layerId: "layer-rooms",
+					geometrySynced: false, // Не синхронизирована со стенами
+				};
 				state.plan.rooms.push(newRoom);
 				state.selectedId = newRoom.id;
 				state.selectedType = "room";

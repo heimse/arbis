@@ -109,3 +109,4 @@ export function preloadFurnitureModels(modelPaths: string[]): void {
 		useGLTF.preload(path);
 	}
 }
+

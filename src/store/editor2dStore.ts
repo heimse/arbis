@@ -598,16 +598,27 @@ export const useEditor2DStore = create<Editor2DState>()(
 					state.dimensionDrawing.active &&
 					state.dimensionDrawing.startPoint
 				) {
+					const startPoint = state.dimensionDrawing.startPoint;
+
+					// Определяем тип размерной линии
+					const dx = Math.abs(endPoint.x - startPoint.x);
+					const dy = Math.abs(endPoint.y - startPoint.y);
+					const angleThreshold = 5; // пикселей
+					let dimensionType: "horizontal" | "vertical" | "linear" = "linear";
+
+					if (dy < angleThreshold || dy < 0.1 * dx) {
+						dimensionType = "horizontal";
+					} else if (dx < angleThreshold || dx < 0.1 * dy) {
+						dimensionType = "vertical";
+					}
+
 					const dimension: DimensionLine = {
 						id: nanoid(),
-						dimensionType: "linear",
-						startTarget: {
-							type: "point",
-							point: state.dimensionDrawing.startPoint,
-						},
+						dimensionType,
+						startTarget: { type: "point", point: startPoint },
 						endTarget: { type: "point", point: endPoint },
-						startPoint: state.dimensionDrawing.startPoint,
-						endPoint: endPoint,
+						startPoint,
+						endPoint,
 						offset: 50,
 						layerId: "layer-dimensions",
 					};
@@ -633,9 +644,21 @@ export const useEditor2DStore = create<Editor2DState>()(
 
 		addDimension: (start, end) =>
 			set((state) => {
+				// Определяем тип размерной линии
+				const dx = Math.abs(end.x - start.x);
+				const dy = Math.abs(end.y - start.y);
+				const angleThreshold = 5; // пикселей
+				let dimensionType: "horizontal" | "vertical" | "linear" = "linear";
+
+				if (dy < angleThreshold || dy < 0.1 * dx) {
+					dimensionType = "horizontal";
+				} else if (dx < angleThreshold || dx < 0.1 * dy) {
+					dimensionType = "vertical";
+				}
+
 				const dimension: DimensionLine = {
 					id: nanoid(),
-					dimensionType: "linear",
+					dimensionType,
 					startTarget: { type: "point", point: start },
 					endTarget: { type: "point", point: end },
 					startPoint: start,

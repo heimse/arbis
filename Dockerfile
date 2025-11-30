@@ -76,3 +76,4 @@ ENV HOSTNAME="0.0.0.0"
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["node", "server.js"]
+

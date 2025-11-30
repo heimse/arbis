@@ -16,3 +16,4 @@ echo "Starting application..."
 
 # Запускаем приложение
 exec "$@"
+

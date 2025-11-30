@@ -350,3 +350,4 @@ export function ChatWidget({ projectId }: ChatWidgetProps) {
 		</div>
 	);
 }
+

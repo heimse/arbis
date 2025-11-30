@@ -225,3 +225,4 @@ export const Furniture3D = memo(function Furniture3D({
 		</>
 	);
 });
+

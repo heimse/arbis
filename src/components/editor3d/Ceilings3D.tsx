@@ -315,3 +315,4 @@ export const Ceilings3D = memo(function Ceilings3D({
 		</>
 	);
 });
+

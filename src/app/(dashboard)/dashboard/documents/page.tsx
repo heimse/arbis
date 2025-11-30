@@ -50,7 +50,10 @@ function getDocumentTypeName(type: string) {
 }
 
 function getDocumentBadge(type: string) {
-	const badges: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+	const badges: Record<
+		string,
+		"default" | "secondary" | "destructive" | "outline"
+	> = {
 		bti_plan: "default",
 		walls_drawings: "secondary",
 		general_plan: "default",
@@ -77,10 +80,7 @@ export default async function DocumentsPage() {
 	}, {} as Record<string, typeof documents>);
 
 	return (
-		<DashboardShell
-			title="Документы"
-			subtitle="Все загруженные документы"
-		>
+		<DashboardShell title="Документы" subtitle="Все загруженные документы">
 			{projects.length === 0 ? (
 				<Card>
 					<CardHeader>
@@ -108,7 +108,7 @@ export default async function DocumentsPage() {
 							{projects.map((project) => (
 								<Button key={project.id} asChild variant="outline">
 									<Link href={`/dashboard/projects/${project.id}`}>
-										Открыть проект "{project.title}"
+										Открыть проект &quot;{project.title}&quot;
 									</Link>
 								</Button>
 							))}
@@ -145,10 +145,12 @@ export default async function DocumentsPage() {
 							<CardHeader className="pb-2">
 								<CardDescription>Другие</CardDescription>
 								<CardTitle className="text-3xl">
-									{documents.filter(
-										(d) =>
-											d.type !== "bti_plan" && d.type !== "walls_drawings"
-									).length}
+									{
+										documents.filter(
+											(d) =>
+												d.type !== "bti_plan" && d.type !== "walls_drawings"
+										).length
+									}
 								</CardTitle>
 							</CardHeader>
 						</Card>
@@ -186,13 +188,18 @@ export default async function DocumentsPage() {
 											<CardContent>
 												<div className="space-y-3">
 													<div className="flex items-center justify-between text-sm">
-														<span className="text-muted-foreground">Загружен:</span>
+														<span className="text-muted-foreground">
+															Загружен:
+														</span>
 														<span>
-															{new Date(doc.createdAt).toLocaleDateString("ru-RU", {
-																day: "numeric",
-																month: "short",
-																year: "numeric",
-															})}
+															{new Date(doc.createdAt).toLocaleDateString(
+																"ru-RU",
+																{
+																	day: "numeric",
+																	month: "short",
+																	year: "numeric",
+																}
+															)}
 														</span>
 													</div>
 													<div className="flex space-x-2">
@@ -217,10 +224,7 @@ export default async function DocumentsPage() {
 															className="flex-1"
 															size="sm"
 														>
-															<a
-																href={doc.fileUrl}
-																download
-															>
+															<a href={doc.fileUrl} download>
 																<Download className="mr-2 h-4 w-4" />
 																Скачать
 															</a>
@@ -249,4 +253,3 @@ export default async function DocumentsPage() {
 		</DashboardShell>
 	);
 }
-
