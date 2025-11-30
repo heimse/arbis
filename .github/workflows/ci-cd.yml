@@ -57,7 +57,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd /home/heimse/build/buildplanner
+            cd /home/heimse/build/arbis
             git pull origin main
 
             # Load Volta environment
