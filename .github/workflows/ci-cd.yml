@@ -1,0 +1,93 @@
+name: deploy to prod
+
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Volta
+        run: |
+          curl https://get.volta.sh | bash
+          export VOLTA_HOME="$HOME/.volta"
+          export PATH="$VOLTA_HOME/bin:$PATH"
+
+      - name: Install Node 22
+        run: |
+          export VOLTA_HOME="$HOME/.volta"
+          export PATH="$VOLTA_HOME/bin:$PATH"
+          volta install node@22
+
+      - name: Install pnpm
+        run: |
+          export VOLTA_HOME="$HOME/.volta"
+          export PATH="$VOLTA_HOME/bin:$PATH"
+          volta install pnpm
+
+      - name: Install dependencies
+        run: |
+          export VOLTA_HOME="$HOME/.volta"
+          export PATH="$VOLTA_HOME/bin:$PATH"
+          pnpm install
+
+      - name: Run Prisma Generate
+        run: |
+          export VOLTA_HOME="$HOME/.volta"
+          export PATH="$VOLTA_HOME/bin:$PATH"
+          pnpm run db:generate
+
+      - name: Build Next.js
+        run: |
+          export VOLTA_HOME="$HOME/.volta"
+          export PATH="$VOLTA_HOME/bin:$PATH"
+          pnpm run build
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /home/heimse/build/buildplanner
+            git pull origin main
+
+            # Load Volta environment
+            export VOLTA_HOME="$HOME/.volta"
+            export PATH="$VOLTA_HOME/bin:$PATH"
+
+            # Ensure Node, pnpm, and PM2 are installed via Volta
+            volta install node@22 || true
+            volta install pnpm || true
+            volta install pm2 || true
+
+            # Install dependencies
+            pnpm install
+
+            # Generate Prisma client
+            pnpm run db:generate
+
+            # Run database migrations (if needed)
+            # pnpm run db:migrate
+            # or
+            # pnpm run db:push
+
+            # Build the application
+            pnpm run build
+
+            # Stop the app if running
+            pm2 stop buildplanner || true
+
+            # Start/restart the app
+            pm2 start ecosystem.config.js
+
+            # Save PM2 process list
+            pm2 save
