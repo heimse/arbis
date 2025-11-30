@@ -44,6 +44,8 @@ jobs:
           DATABASE_URL="${{ secrets.DATABASE_URL }}"
           NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
           NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}"
+          AUTH_URL="${{ secrets.NEXTAUTH_URL }}"
+          AUTH_TRUST_HOST=true
           YANDEX_CLOUD_API_KEY="${{ secrets.YANDEX_CLOUD_API_KEY }}"
           YANDEX_CLOUD_PROJECT_ID="${{ secrets.YANDEX_CLOUD_PROJECT_ID }}"
           YANDEX_CLOUD_AGENT_ID="${{ secrets.YANDEX_CLOUD_AGENT_ID }}"
@@ -88,18 +90,18 @@ jobs:
             # Create logs directory if it doesn't exist
             mkdir -p logs
 
-            # Create .env file if it doesn't exist
-            if [ ! -f .env ]; then
-              cat > .env << ENVEOF
+            # Create/update .env file
+            cat > .env << ENVEOF
             DATABASE_URL="${{ secrets.DATABASE_URL }}"
             NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
             NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}"
+            AUTH_URL="${{ secrets.NEXTAUTH_URL }}"
+            AUTH_TRUST_HOST=true
             YANDEX_CLOUD_API_KEY="${{ secrets.YANDEX_CLOUD_API_KEY }}"
             YANDEX_CLOUD_PROJECT_ID="${{ secrets.YANDEX_CLOUD_PROJECT_ID }}"
             YANDEX_CLOUD_AGENT_ID="${{ secrets.YANDEX_CLOUD_AGENT_ID }}"
             NODE_ENV=production
             ENVEOF
-            fi
 
             # Load Volta environment
             export VOLTA_HOME="$HOME/.volta"
