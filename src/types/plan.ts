@@ -152,6 +152,7 @@ export type RoomType =
 	| "bedroom" // спальня
 	| "living-room" // гостиная
 	| "kitchen" // кухня
+	| "dining-room" // столовая
 	| "bathroom" // санузел
 	| "toilet" // туалет
 	| "corridor" // коридор

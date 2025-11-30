@@ -107,6 +107,7 @@ export async function getAIResponse(
 						bedroom: "Спальня",
 						"living-room": "Гостиная",
 						kitchen: "Кухня",
+						"dining-room": "Столовая",
 						bathroom: "Санузел",
 						toilet: "Туалет",
 						corridor: "Коридор",
@@ -271,7 +272,7 @@ export async function getProjectContext(projectId: string) {
 		const project = await prisma.project.findUnique({
 			where: { id: projectId },
 			include: {
-				planVersions: {
+				plans: {
 					orderBy: { version: "desc" },
 					take: 1,
 				},
@@ -290,13 +291,13 @@ export async function getProjectContext(projectId: string) {
 		} = {
 			projectId,
 			projectTitle: project.title,
-			hasPlan: project.planVersions.length > 0,
+			hasPlan: project.plans.length > 0,
 		};
 
 		// Добавляем информацию о площади, если есть план
-		if (project.planVersions.length > 0 && project.planVersions[0].data) {
+		if (project.plans.length > 0 && project.plans[0].data) {
 			try {
-				const planData = project.planVersions[0].data as PlanData;
+				const planData = project.plans[0].data as PlanData;
 				const totalArea = calculateTotalArea(planData);
 				if (totalArea > 0) {
 					context.totalArea = totalArea;
