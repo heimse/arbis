@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  # PostgreSQL база данных
+  postgres:
+    image: postgres:16-alpine
+    container_name: buildplanner-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: buildplanner
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - buildplanner-network
+
+  # Next.js приложение
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: buildplanner-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/buildplanner?schema=public
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-your-secret-key-min-32-characters-long-change-in-production}
+      YANDEX_CLOUD_API_KEY: ${YANDEX_CLOUD_API_KEY:-}
+      YANDEX_CLOUD_PROJECT_ID: ${YANDEX_CLOUD_PROJECT_ID:-b1gqkhrllleglkvashd3}
+      YANDEX_CLOUD_AGENT_ID: ${YANDEX_CLOUD_AGENT_ID:-fvtj2snqf0ane0lg8rqf}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - buildplanner-network
+    volumes:
+      # Монтируем папку с планами и текстурами
+      - ./public/plans:/app/public/plans:ro
+      - ./public/textures:/app/public/textures:ro
+      - ./public/furniture:/app/public/furniture:ro
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  buildplanner-network:
+    driver: bridge

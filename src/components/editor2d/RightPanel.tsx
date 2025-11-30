@@ -1520,6 +1520,10 @@ function RoomProperties() {
 
 	if (!room) return null;
 
+	// Безопасные значения по умолчанию
+	const roomSize = room.size || { width: 3, height: 3 };
+	const roomRotation = room.rotation ?? 0;
+
 	return (
 		<div className="space-y-4">
 			<h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">
@@ -1538,7 +1542,7 @@ function RoomProperties() {
 					</label>
 					<Input
 						type="text"
-						value={room.name}
+						value={room.name || ""}
 						onChange={(e) => {
 							dispatch({
 								type: "UPDATE_ROOM",
@@ -1557,7 +1561,7 @@ function RoomProperties() {
 						</label>
 						<Input
 							type="number"
-							value={room.size.width.toFixed(2)}
+							value={roomSize.width.toFixed(2)}
 							onChange={(e) => {
 								const width = parseFloat(e.target.value) || 0;
 								if (width > 0) {
@@ -1565,7 +1569,7 @@ function RoomProperties() {
 										type: "UPDATE_ROOM",
 										id: room.id,
 										updates: {
-											size: { ...room.size, width },
+											size: { ...roomSize, width },
 										},
 									});
 								}
@@ -1581,7 +1585,7 @@ function RoomProperties() {
 						</label>
 						<Input
 							type="number"
-							value={room.size.height.toFixed(2)}
+							value={roomSize.height.toFixed(2)}
 							onChange={(e) => {
 								const height = parseFloat(e.target.value) || 0;
 								if (height > 0) {
@@ -1589,7 +1593,7 @@ function RoomProperties() {
 										type: "UPDATE_ROOM",
 										id: room.id,
 										updates: {
-											size: { ...room.size, height },
+											size: { ...roomSize, height },
 										},
 									});
 								}
@@ -1606,7 +1610,7 @@ function RoomProperties() {
 					</label>
 					<Input
 						type="number"
-						value={room.rotation.toFixed(1)}
+						value={roomRotation.toFixed(1)}
 						onChange={(e) => {
 							const rotation = parseFloat(e.target.value) || 0;
 							dispatch({
@@ -1850,6 +1854,222 @@ function RoomProperties() {
 				)}
 			</div>
 
+			{/* Потолок комнаты */}
+			<div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+				<div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+					Потолок комнаты
+				</div>
+
+				{/* Режим заливки */}
+				<div className="space-y-2">
+					<label className="text-sm text-gray-600 dark:text-gray-400">
+						Тип потолка
+					</label>
+					<select
+						value={room.ceilingFillMode ?? "color"}
+						onChange={(e) => {
+							dispatch({
+								type: "UPDATE_ROOM",
+								id: room.id,
+								updates: {
+									ceilingFillMode: e.target.value as
+										| "color"
+										| "texture"
+										| "light",
+								},
+							});
+						}}
+						className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+					>
+						<option value="color">Цвет</option>
+						<option value="texture">Текстура</option>
+						<option value="light">Светящийся</option>
+					</select>
+				</div>
+
+				{/* Цвет потолка */}
+				{room.ceilingFillMode !== "texture" && (
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Цвет потолка
+						</label>
+						<div className="flex gap-2">
+							<Input
+								type="color"
+								value={room.ceilingColor ?? "#f3f4f6"}
+								onChange={(e) => {
+									dispatch({
+										type: "UPDATE_ROOM",
+										id: room.id,
+										updates: { ceilingColor: e.target.value },
+									});
+								}}
+								className="w-16 h-10 p-1 border border-gray-300 dark:border-gray-700 rounded-md cursor-pointer"
+							/>
+							<Input
+								type="text"
+								value={room.ceilingColor ?? "#f3f4f6"}
+								onChange={(e) => {
+									dispatch({
+										type: "UPDATE_ROOM",
+										id: room.id,
+										updates: { ceilingColor: e.target.value },
+									});
+								}}
+								placeholder="#f3f4f6"
+								className="flex-1"
+							/>
+						</div>
+					</div>
+				)}
+
+				{/* Текстура потолка */}
+				{room.ceilingFillMode === "texture" && (
+					<>
+						<div className="space-y-2">
+							<label className="text-sm text-gray-600 dark:text-gray-400">
+								Текстура потолка
+							</label>
+							<div className="flex gap-2">
+								<Input
+									type="file"
+									accept="image/*"
+									onChange={(e) => {
+										const file = e.target.files?.[0];
+										if (file) {
+											const url = URL.createObjectURL(file);
+											dispatch({
+												type: "UPDATE_ROOM",
+												id: room.id,
+												updates: {
+													ceilingTexture: url,
+													ceilingFillMode: "texture",
+												},
+											});
+										}
+									}}
+									className="flex-1 text-sm"
+								/>
+								{room.ceilingTexture && (
+									<button
+										type="button"
+										onClick={() => {
+											// Освобождаем blob URL
+											if (room.ceilingTexture?.startsWith("blob:")) {
+												URL.revokeObjectURL(room.ceilingTexture);
+											}
+											dispatch({
+												type: "UPDATE_ROOM",
+												id: room.id,
+												updates: {
+													ceilingTexture: null,
+													ceilingFillMode: "color",
+												},
+											});
+										}}
+										className="px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
+									>
+										Удалить
+									</button>
+								)}
+							</div>
+							{room.ceilingTexture && (
+								<div className="mt-2">
+									<img
+										src={room.ceilingTexture}
+										alt="Предпросмотр текстуры потолка"
+										className="w-full h-24 object-cover rounded-md border border-gray-300 dark:border-gray-700"
+									/>
+								</div>
+							)}
+						</div>
+
+						{/* Масштаб текстуры потолка */}
+						{room.ceilingTexture && (
+							<div className="grid grid-cols-2 gap-2">
+								<div className="space-y-2">
+									<label className="text-sm text-gray-600 dark:text-gray-400">
+										Масштаб X
+									</label>
+									<Input
+										type="number"
+										value={room.ceilingTextureScale?.x ?? 1}
+										onChange={(e) => {
+											const scaleX = parseFloat(e.target.value) || 1;
+											dispatch({
+												type: "UPDATE_ROOM",
+												id: room.id,
+												updates: {
+													ceilingTextureScale: {
+														x: scaleX,
+														y: room.ceilingTextureScale?.y ?? 1,
+													},
+												},
+											});
+										}}
+										step="0.1"
+										min="0.1"
+									/>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm text-gray-600 dark:text-gray-400">
+										Масштаб Y
+									</label>
+									<Input
+										type="number"
+										value={room.ceilingTextureScale?.y ?? 1}
+										onChange={(e) => {
+											const scaleY = parseFloat(e.target.value) || 1;
+											dispatch({
+												type: "UPDATE_ROOM",
+												id: room.id,
+												updates: {
+													ceilingTextureScale: {
+														x: room.ceilingTextureScale?.x ?? 1,
+														y: scaleY,
+													},
+												},
+											});
+										}}
+										step="0.1"
+										min="0.1"
+									/>
+								</div>
+							</div>
+						)}
+					</>
+				)}
+
+				{/* Интенсивность света для светящегося потолка */}
+				{room.ceilingFillMode === "light" && (
+					<div className="space-y-2">
+						<label className="text-sm text-gray-600 dark:text-gray-400">
+							Интенсивность света: {room.ceilingLightIntensity ?? 0}
+						</label>
+						<Input
+							type="range"
+							min="0"
+							max="5"
+							step="0.1"
+							value={room.ceilingLightIntensity ?? 0}
+							onChange={(e) => {
+								dispatch({
+									type: "UPDATE_ROOM",
+									id: room.id,
+									updates: {
+										ceilingLightIntensity: parseFloat(e.target.value) || 0,
+									},
+								});
+							}}
+							className="w-full"
+						/>
+						<div className="text-xs text-gray-500 dark:text-gray-400">
+							Диапазон: 0 (нет свечения) - 5 (максимальная яркость)
+						</div>
+					</div>
+				)}
+			</div>
+
 			{/* Информация */}
 			<div className="pt-2 border-t border-gray-200 dark:border-gray-800">
 				<div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
@@ -1862,12 +2082,14 @@ function RoomProperties() {
 							{state.layers.get(room.layerId)?.name || "Неизвестно"}
 						</span>
 					</div>
-					<div>
-						Площадь:{" "}
-						<span className="font-medium">
-							{(room.size.width * room.size.height).toFixed(2)} м²
-						</span>
-					</div>
+					{roomSize && (
+						<div>
+							Площадь:{" "}
+							<span className="font-medium">
+								{(roomSize.width * roomSize.height).toFixed(2)} м²
+							</span>
+						</div>
+					)}
 				</div>
 			</div>
 		</div>
@@ -1985,6 +2207,47 @@ function LayersPanel() {
 		])
 	);
 
+	// Маппинг групп на слои
+	const groupToLayers: Record<string, string[]> = {
+		walls: ["layer-walls"],
+		doors: ["layer-openings"],
+		windows: ["layer-openings"],
+		nodes: ["layer-walls"], // Узлы обычно на слое стен
+		rooms: ["layer-rooms"],
+		furniture: ["layer-furniture"],
+		dimensions: ["layer-dimensions"],
+	};
+
+	// Проверка видимости группы
+	const isGroupVisible = (group: string): boolean => {
+		const layerIds = groupToLayers[group] || [];
+		for (const layerId of layerIds) {
+			const layer = state.layers.get(layerId);
+			if (layer && layer.visible) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	// Переключение видимости группы
+	const toggleGroupVisibility = (group: string, e: React.MouseEvent) => {
+		e.stopPropagation();
+		const layerIds = groupToLayers[group] || [];
+		const shouldBeVisible = !isGroupVisible(group);
+
+		for (const layerId of layerIds) {
+			const layer = state.layers.get(layerId);
+			if (layer) {
+				dispatch({
+					type: "UPDATE_LAYER",
+					id: layerId,
+					updates: { visible: shouldBeVisible },
+				});
+			}
+		}
+	};
+
 	const toggleGroup = (group: string) => {
 		const newExpanded = new Set(expandedGroups);
 		if (newExpanded.has(group)) {
@@ -2035,6 +2298,21 @@ function LayersPanel() {
 										expandedGroups.has("walls") ? "rotate-90" : ""
 									}`}
 								/>
+								<button
+									onClick={(e) => toggleGroupVisibility("walls", e)}
+									className="flex items-center justify-center w-5 h-5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+									title={
+										isGroupVisible("walls")
+											? "Скрыть все стены"
+											: "Показать все стены"
+									}
+								>
+									{isGroupVisible("walls") ? (
+										<Eye size={14} />
+									) : (
+										<EyeOff size={14} className="text-gray-400" />
+									)}
+								</button>
 								<Square size={14} />
 								<span>Стены ({walls.length})</span>
 							</button>
@@ -2070,6 +2348,21 @@ function LayersPanel() {
 										expandedGroups.has("doors") ? "rotate-90" : ""
 									}`}
 								/>
+								<button
+									onClick={(e) => toggleGroupVisibility("doors", e)}
+									className="flex items-center justify-center w-5 h-5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+									title={
+										isGroupVisible("doors")
+											? "Скрыть все двери"
+											: "Показать все двери"
+									}
+								>
+									{isGroupVisible("doors") ? (
+										<Eye size={14} />
+									) : (
+										<EyeOff size={14} className="text-gray-400" />
+									)}
+								</button>
 								<DoorOpen size={14} />
 								<span>Двери ({doors.length})</span>
 							</button>
@@ -2140,6 +2433,21 @@ function LayersPanel() {
 										expandedGroups.has("nodes") ? "rotate-90" : ""
 									}`}
 								/>
+								<button
+									onClick={(e) => toggleGroupVisibility("nodes", e)}
+									className="flex items-center justify-center w-5 h-5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+									title={
+										isGroupVisible("nodes")
+											? "Скрыть все узлы"
+											: "Показать все узлы"
+									}
+								>
+									{isGroupVisible("nodes") ? (
+										<Eye size={14} />
+									) : (
+										<EyeOff size={14} className="text-gray-400" />
+									)}
+								</button>
 								<Circle size={14} />
 								<span>Узлы ({nodes.length})</span>
 							</button>
@@ -2175,6 +2483,21 @@ function LayersPanel() {
 										expandedGroups.has("rooms") ? "rotate-90" : ""
 									}`}
 								/>
+								<button
+									onClick={(e) => toggleGroupVisibility("rooms", e)}
+									className="flex items-center justify-center w-5 h-5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+									title={
+										isGroupVisible("rooms")
+											? "Скрыть все комнаты"
+											: "Показать все комнаты"
+									}
+								>
+									{isGroupVisible("rooms") ? (
+										<Eye size={14} />
+									) : (
+										<EyeOff size={14} className="text-gray-400" />
+									)}
+								</button>
 								<Square size={14} />
 								<span>Комнаты ({rooms.length})</span>
 							</button>
@@ -2210,7 +2533,22 @@ function LayersPanel() {
 										expandedGroups.has("furniture") ? "rotate-90" : ""
 									}`}
 								/>
-								<Square size={14} />
+								<button
+									onClick={(e) => toggleGroupVisibility("furniture", e)}
+									className="flex items-center justify-center w-5 h-5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+									title={
+										isGroupVisible("furniture")
+											? "Скрыть всю мебель"
+											: "Показать всю мебель"
+									}
+								>
+									{isGroupVisible("furniture") ? (
+										<Eye size={14} />
+									) : (
+										<EyeOff size={14} className="text-gray-400" />
+									)}
+								</button>
+								<Armchair size={14} />
 								<span>Мебель ({furniture.length})</span>
 							</button>
 							{expandedGroups.has("furniture") && (
@@ -2245,6 +2583,21 @@ function LayersPanel() {
 										expandedGroups.has("dimensions") ? "rotate-90" : ""
 									}`}
 								/>
+								<button
+									onClick={(e) => toggleGroupVisibility("dimensions", e)}
+									className="flex items-center justify-center w-5 h-5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+									title={
+										isGroupVisible("dimensions")
+											? "Скрыть все размеры"
+											: "Показать все размеры"
+									}
+								>
+									{isGroupVisible("dimensions") ? (
+										<Eye size={14} />
+									) : (
+										<EyeOff size={14} className="text-gray-400" />
+									)}
+								</button>
 								<Square size={14} />
 								<span>Размеры ({dimensions.length})</span>
 							</button>

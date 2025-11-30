@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 	transpilePackages: ["three", "@react-three/fiber", "@react-three/drei"],
+	output: "standalone", // Для оптимизации Docker образа
 	compiler: {
 		// Disable SWC transforms that might interfere with JSX
 		emotion: false,

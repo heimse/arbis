@@ -1,0 +1,160 @@
+{
+	"nodes": [
+		{ "id": "node-1", "x": 0, "y": 0, "connectedWalls": ["wall-1", "wall-4"] },
+		{ "id": "node-2", "x": 15, "y": 0, "connectedWalls": ["wall-1", "wall-2"] },
+		{ "id": "node-3", "x": 15, "y": 12, "connectedWalls": ["wall-2", "wall-3"] },
+		{ "id": "node-4", "x": 0, "y": 12, "connectedWalls": ["wall-3", "wall-4"] }
+	],
+	"walls": [
+		{
+			"id": "wall-1",
+			"startNodeId": "node-1",
+			"endNodeId": "node-2",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-2",
+			"startNodeId": "node-2",
+			"endNodeId": "node-3",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-3",
+			"startNodeId": "node-3",
+			"endNodeId": "node-4",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-4",
+			"startNodeId": "node-4",
+			"endNodeId": "node-1",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		}
+	],
+	"doors": [
+		{
+			"id": "door-1",
+			"wallId": "wall-4",
+			"position": 0.3,
+			"width": 900,
+			"height": 2100,
+			"hingeSide": "left",
+			"swingDirection": "inside",
+			"layerId": "layer-openings"
+		}
+	],
+	"windows": [
+		{
+			"id": "window-1",
+			"wallId": "wall-1",
+			"position": 0.5,
+			"width": 3000,
+			"height": 1500,
+			"sillHeight": 800,
+			"layerId": "layer-openings"
+		},
+		{
+			"id": "window-2",
+			"wallId": "wall-2",
+			"position": 0.5,
+			"width": 2500,
+			"height": 1500,
+			"sillHeight": 800,
+			"layerId": "layer-openings"
+		}
+	],
+	"rooms": [
+		{
+			"id": "room-1",
+			"name": "Студия",
+			"position": { "x": 0, "y": 0 },
+			"size": { "width": 15, "height": 12 },
+			"rotation": 0,
+			"layerId": "layer-rooms",
+			"polygon": [
+				{ "x": 0, "y": 0 },
+				{ "x": 15, "y": 0 },
+				{ "x": 15, "y": 12 },
+				{ "x": 0, "y": 12 },
+				{ "x": 0, "y": 0 }
+			],
+			"floorFillMode": "color",
+			"floorColor": "#e5e7eb",
+			"ceilingFillMode": "color",
+			"ceilingColor": "#f3f4f6"
+		}
+	],
+	"furniture": [],
+	"dimensions": [],
+	"layers": [
+		{
+			"id": "layer-rooms",
+			"name": "Комнаты",
+			"visible": true,
+			"locked": false,
+			"color": "#3b82f6"
+		},
+		{
+			"id": "layer-walls",
+			"name": "Стены",
+			"visible": true,
+			"locked": false,
+			"color": "#6b7280"
+		},
+		{
+			"id": "layer-openings",
+			"name": "Проёмы",
+			"visible": true,
+			"locked": false,
+			"color": "#10b981"
+		},
+		{
+			"id": "layer-furniture",
+			"name": "Мебель",
+			"visible": true,
+			"locked": false,
+			"color": "#f59e0b"
+		},
+		{
+			"id": "layer-dimensions",
+			"name": "Размеры",
+			"visible": true,
+			"locked": false,
+			"color": "#8b5cf6"
+		}
+	],
+	"camera": { "x": 7.5, "y": 6, "zoom": 40 },
+	"backgroundImage": null,
+	"gridSettings": {
+		"visible": true,
+		"spacing": 0.5,
+		"subdivisions": 5,
+		"color": "#e5e7eb",
+		"majorColor": "#d1d5db"
+	},
+	"planSettings": {
+		"width": 25,
+		"height": 20,
+		"units": "meters",
+		"scale": 50
+	},
+	"snapMode": {
+		"toGrid": true,
+		"toNodes": true,
+		"toWallMidpoints": true,
+		"toOrthogonal": true
+	},
+	"version": "1.0"
+}

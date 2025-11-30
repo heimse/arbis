@@ -13,6 +13,7 @@ import { Doors3D } from "./Doors3D";
 import { Windows3D } from "./Windows3D";
 import { Rooms3D } from "./Rooms3D";
 import { Furniture3D } from "./Furniture3D";
+import { Ceilings3D } from "./Ceilings3D";
 import { Editor3DInteractionProvider } from "./Editor3DInteractionContext";
 
 export type CameraMode = "orbit" | "firstPerson";
@@ -201,6 +202,13 @@ function SceneContent({
 
 			{/* Мебель */}
 			<Furniture3D furniture={state.furniture} layers={state.layers} />
+
+			{/* Потолки комнат */}
+			<Ceilings3D
+				rooms={state.rooms}
+				walls={state.walls}
+				layers={state.layers}
+			/>
 
 			{/* Управление камерой от первого лица */}
 			{cameraMode === "firstPerson" && (

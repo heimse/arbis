@@ -1,0 +1,353 @@
+{
+	"nodes": [
+		{ "id": "node-1", "x": 0, "y": 0, "connectedWalls": ["wall-1", "wall-5"] },
+		{ "id": "node-2", "x": 20, "y": 0, "connectedWalls": ["wall-1", "wall-2", "wall-6"] },
+		{ "id": "node-3", "x": 20, "y": 14, "connectedWalls": ["wall-2", "wall-3", "wall-7"] },
+		{ "id": "node-4", "x": 0, "y": 14, "connectedWalls": ["wall-3", "wall-4", "wall-5", "wall-8"] },
+		{ "id": "node-5", "x": 0, "y": 6, "connectedWalls": ["wall-5", "wall-8", "wall-9"] },
+		{ "id": "node-6", "x": 9, "y": 6, "connectedWalls": ["wall-9", "wall-10"] },
+		{ "id": "node-7", "x": 9, "y": 14, "connectedWalls": ["wall-10", "wall-4"] },
+		{ "id": "node-8", "x": 11, "y": 0, "connectedWalls": ["wall-6", "wall-11"] },
+		{ "id": "node-9", "x": 11, "y": 7, "connectedWalls": ["wall-11", "wall-12"] },
+		{ "id": "node-10", "x": 16, "y": 7, "connectedWalls": ["wall-12", "wall-13"] },
+		{ "id": "node-11", "x": 16, "y": 14, "connectedWalls": ["wall-13", "wall-7"] }
+	],
+	"walls": [
+		{
+			"id": "wall-1",
+			"startNodeId": "node-1",
+			"endNodeId": "node-2",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-2",
+			"startNodeId": "node-2",
+			"endNodeId": "node-3",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-3",
+			"startNodeId": "node-3",
+			"endNodeId": "node-4",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-4",
+			"startNodeId": "node-4",
+			"endNodeId": "node-7",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-5",
+			"startNodeId": "node-1",
+			"endNodeId": "node-5",
+			"type": "load-bearing",
+			"thickness": 200,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-6",
+			"startNodeId": "node-2",
+			"endNodeId": "node-8",
+			"type": "partition",
+			"thickness": 100,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-7",
+			"startNodeId": "node-3",
+			"endNodeId": "node-11",
+			"type": "partition",
+			"thickness": 100,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-8",
+			"startNodeId": "node-5",
+			"endNodeId": "node-4",
+			"type": "partition",
+			"thickness": 100,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-9",
+			"startNodeId": "node-5",
+			"endNodeId": "node-6",
+			"type": "partition",
+			"thickness": 100,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-10",
+			"startNodeId": "node-6",
+			"endNodeId": "node-7",
+			"type": "partition",
+			"thickness": 100,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-11",
+			"startNodeId": "node-8",
+			"endNodeId": "node-9",
+			"type": "partition",
+			"thickness": 100,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-12",
+			"startNodeId": "node-9",
+			"endNodeId": "node-10",
+			"type": "partition",
+			"thickness": 100,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		},
+		{
+			"id": "wall-13",
+			"startNodeId": "node-10",
+			"endNodeId": "node-11",
+			"type": "partition",
+			"thickness": 100,
+			"height": 2.8,
+			"layerId": "layer-walls"
+		}
+	],
+	"doors": [
+		{
+			"id": "door-1",
+			"wallId": "wall-5",
+			"position": 0.3,
+			"width": 900,
+			"height": 2100,
+			"hingeSide": "left",
+			"swingDirection": "inside",
+			"layerId": "layer-openings"
+		},
+		{
+			"id": "door-2",
+			"wallId": "wall-8",
+			"position": 0.5,
+			"width": 800,
+			"height": 2100,
+			"hingeSide": "right",
+			"swingDirection": "inside",
+			"layerId": "layer-openings"
+		},
+		{
+			"id": "door-3",
+			"wallId": "wall-9",
+			"position": 0.5,
+			"width": 800,
+			"height": 2100,
+			"hingeSide": "right",
+			"swingDirection": "inside",
+			"layerId": "layer-openings"
+		},
+		{
+			"id": "door-4",
+			"wallId": "wall-12",
+			"position": 0.5,
+			"width": 800,
+			"height": 2100,
+			"hingeSide": "right",
+			"swingDirection": "inside",
+			"layerId": "layer-openings"
+		}
+	],
+	"windows": [
+		{
+			"id": "window-1",
+			"wallId": "wall-1",
+			"position": 0.4,
+			"width": 3200,
+			"height": 1500,
+			"sillHeight": 800,
+			"layerId": "layer-openings"
+		},
+		{
+			"id": "window-2",
+			"wallId": "wall-2",
+			"position": 0.5,
+			"width": 2800,
+			"height": 1500,
+			"sillHeight": 800,
+			"layerId": "layer-openings"
+		},
+		{
+			"id": "window-3",
+			"wallId": "wall-6",
+			"position": 0.5,
+			"width": 2200,
+			"height": 1500,
+			"sillHeight": 800,
+			"layerId": "layer-openings"
+		},
+		{
+			"id": "window-4",
+			"wallId": "wall-11",
+			"position": 0.5,
+			"width": 2000,
+			"height": 1500,
+			"sillHeight": 800,
+			"layerId": "layer-openings"
+		}
+	],
+	"rooms": [
+		{
+			"id": "room-1",
+			"name": "Гостиная",
+			"position": { "x": 0, "y": 0 },
+			"size": { "width": 9, "height": 6 },
+			"rotation": 0,
+			"layerId": "layer-rooms",
+			"polygon": [
+				{ "x": 0, "y": 0 },
+				{ "x": 9, "y": 0 },
+				{ "x": 9, "y": 6 },
+				{ "x": 0, "y": 6 },
+				{ "x": 0, "y": 0 }
+			],
+			"floorFillMode": "color",
+			"floorColor": "#d4a574",
+			"ceilingFillMode": "color",
+			"ceilingColor": "#f3f4f6"
+		},
+		{
+			"id": "room-2",
+			"name": "Спальня 1",
+			"position": { "x": 0, "y": 6 },
+			"size": { "width": 9, "height": 8 },
+			"rotation": 0,
+			"layerId": "layer-rooms",
+			"polygon": [
+				{ "x": 0, "y": 6 },
+				{ "x": 9, "y": 6 },
+				{ "x": 9, "y": 14 },
+				{ "x": 0, "y": 14 },
+				{ "x": 0, "y": 6 }
+			],
+			"floorFillMode": "color",
+			"floorColor": "#c9a961",
+			"ceilingFillMode": "color",
+			"ceilingColor": "#f3f4f6"
+		},
+		{
+			"id": "room-3",
+			"name": "Спальня 2",
+			"position": { "x": 11, "y": 0 },
+			"size": { "width": 9, "height": 7 },
+			"rotation": 0,
+			"layerId": "layer-rooms",
+			"polygon": [
+				{ "x": 11, "y": 0 },
+				{ "x": 20, "y": 0 },
+				{ "x": 20, "y": 7 },
+				{ "x": 11, "y": 7 },
+				{ "x": 11, "y": 0 }
+			],
+			"floorFillMode": "color",
+			"floorColor": "#c9a961",
+			"ceilingFillMode": "color",
+			"ceilingColor": "#f3f4f6"
+		},
+		{
+			"id": "room-4",
+			"name": "Спальня 3",
+			"position": { "x": 16, "y": 7 },
+			"size": { "width": 4, "height": 7 },
+			"rotation": 0,
+			"layerId": "layer-rooms",
+			"polygon": [
+				{ "x": 16, "y": 7 },
+				{ "x": 20, "y": 7 },
+				{ "x": 20, "y": 14 },
+				{ "x": 16, "y": 14 },
+				{ "x": 16, "y": 7 }
+			],
+			"floorFillMode": "color",
+			"floorColor": "#c9a961",
+			"ceilingFillMode": "color",
+			"ceilingColor": "#f3f4f6"
+		}
+	],
+	"furniture": [],
+	"dimensions": [],
+	"layers": [
+		{
+			"id": "layer-rooms",
+			"name": "Комнаты",
+			"visible": true,
+			"locked": false,
+			"color": "#3b82f6"
+		},
+		{
+			"id": "layer-walls",
+			"name": "Стены",
+			"visible": true,
+			"locked": false,
+			"color": "#6b7280"
+		},
+		{
+			"id": "layer-openings",
+			"name": "Проёмы",
+			"visible": true,
+			"locked": false,
+			"color": "#10b981"
+		},
+		{
+			"id": "layer-furniture",
+			"name": "Мебель",
+			"visible": true,
+			"locked": false,
+			"color": "#f59e0b"
+		},
+		{
+			"id": "layer-dimensions",
+			"name": "Размеры",
+			"visible": true,
+			"locked": false,
+			"color": "#8b5cf6"
+		}
+	],
+	"camera": { "x": 10, "y": 7, "zoom": 28 },
+	"backgroundImage": null,
+	"gridSettings": {
+		"visible": true,
+		"spacing": 0.5,
+		"subdivisions": 5,
+		"color": "#e5e7eb",
+		"majorColor": "#d1d5db"
+	},
+	"planSettings": {
+		"width": 30,
+		"height": 25,
+		"units": "meters",
+		"scale": 50
+	},
+	"snapMode": {
+		"toGrid": true,
+		"toNodes": true,
+		"toWallMidpoints": true,
+		"toOrthogonal": true
+	},
+	"version": "1.0"
+}

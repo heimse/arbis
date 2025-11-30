@@ -9,6 +9,7 @@ import { KeyboardHandler } from "./KeyboardHandler";
 import { HistoryIndicator } from "./HistoryIndicator";
 import { EditableProjectName } from "./EditableProjectName";
 import { Plan3DViewer } from "@/components/editor3d";
+import { ChatWidget } from "./ChatWidget";
 import {
 	Save,
 	Maximize2,
@@ -633,6 +634,9 @@ function EditorContent({
 				{/* Правая панель */}
 				<RightPanel />
 			</div>
+
+			{/* Виджет чата с AI */}
+			<ChatWidget projectId={projectId} />
 		</div>
 	);
 }

@@ -102,6 +102,13 @@ export type Room = {
 	floorColor?: string; // hex цвет
 	floorTexture?: string | null; // ПОЛНЫЙ URL текстуры, загруженной пользователем (blob:https:// / file:// / https://)
 	floorTextureScale?: { x: number; y: number } | null; // UV scale, дефолт 1x1
+
+	// Свойства потолка
+	ceilingFillMode?: RoomCeilingFillMode; // "color" | "texture" | "light"
+	ceilingColor?: string; // hex цвет потолка
+	ceilingTexture?: string | null; // URL текстуры потолка, загруженной пользователем
+	ceilingTextureScale?: { x: number; y: number } | null; // масштаб UV по X/Z
+	ceilingLightIntensity?: number | null; // для режима "light": 0–5, мощность подсветки
 };
 
 // Мебель
