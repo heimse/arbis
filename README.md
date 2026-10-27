@@ -1,75 +1,75 @@
-# Арбис 🏗️
+# Arbis 🏗️
 
-Профессиональный веб-редактор для создания архитектурных планов с поддержкой 2D и 3D визуализации. Работает прямо в браузере с мощными инструментами для черчения стен, размещения дверей, окон, мебели и других элементов планировки.
+A web editor for architectural floor plans with 2D and 3D visualization. It runs in the browser and comes with tools for drawing walls and placing doors, windows, furniture and other layout elements.
 
-## ✨ Основные возможности
+## ✨ Key features
 
-- 🎨 **Интуитивный интерфейс** - минималистичный дизайн в стиле Figma
-- 📐 **Точное черчение** - система snap к сетке, узлам и ортогональным направлениям
-- 🧱 **Рисование стен** - создание стен через узлы с автоматической привязкой
-- 🚪 **Проёмы** - добавление дверей и окон прямо на стены
-- 🪑 **Библиотека мебели** - размещение 3D моделей мебели на плане
-- 🏠 **3D визуализация** - просмотр плана в трехмерном пространстве с режимом от первого лица
-- 📊 **Слои** - организация объектов с управлением видимостью
-- 🖼️ **Фоновые изображения** - возможность обвести существующий план
-- ⌨️ **Горячие клавиши** - быстрый доступ ко всем инструментам
-- 🔍 **Zoom & Pan** - плавная навигация по плану
-- 💾 **Автосохранение** - автоматическое сохранение изменений
-- 🤖 **AI-ассистент** - интеллектуальная помощь в планировании
-- 📄 **Управление проектами** - создание и управление несколькими проектами
+- 🎨 **Clean interface**: minimalist, Figma-style design
+- 📐 **Precise drawing**: snapping to the grid, nodes and orthogonal directions
+- 🧱 **Wall drawing**: walls built from nodes with automatic snapping
+- 🚪 **Openings**: doors and windows placed directly on walls
+- 🪑 **Furniture library**: 3D furniture models placed on the plan
+- 🏠 **3D view**: explore the plan in 3D, including a first-person mode
+- 📊 **Layers**: organize objects and toggle their visibility
+- 🖼️ **Background images**: trace over an existing plan
+- ⌨️ **Keyboard shortcuts**: quick access to every tool
+- 🔍 **Zoom & pan**: smooth navigation around the plan
+- 💾 **Autosave**: changes are saved automatically
+- 🤖 **AI assistant**: smart help with planning
+- 📄 **Project management**: create and manage multiple projects
 
-## 🚀 Установка и запуск
+## 🚀 Installation
 
-### Требования
+### Requirements
 
-Перед началом работы убедитесь, что у вас установлены следующие инструменты:
+Make sure the following tools are installed before you start.
 
-#### 1. Node.js и npm
+#### 1. Node.js and npm
 
-Проект требует **Node.js версии 20.17.9 или выше** и **npm версии 10.0.0 или выше**.
+The project requires **Node.js 20.17.9 or later** and **npm 10.0.0 or later**.
 
-**Проверка версий:**
+**Check versions:**
 
 ```bash
-node --version  # Должно быть >= 20.17.9
-npm --version   # Должно быть >= 10.0.0
+node --version  # should be >= 20.17.9
+npm --version   # should be >= 10.0.0
 ```
 
-**Установка Node.js:**
+**Install Node.js:**
 
-- **Windows/Mac**: Скачайте с [официального сайта](https://nodejs.org/)
-- **Linux**: Используйте nvm (Node Version Manager):
+- **Windows/Mac**: download from the [official website](https://nodejs.org/)
+- **Linux**: use nvm (Node Version Manager):
   ```bash
   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
   nvm install 20.17.9
   nvm use 20.17.9
   ```
 
-**Альтернатива: использование nvm (рекомендуется)**
+**Alternative: nvm (recommended)**
 
-Проект содержит файлы `.nvmrc` и `.node-version` для автоматического выбора версии Node.js:
+The project includes `.nvmrc` and `.node-version` files, so the Node.js version is picked automatically:
 
 ```bash
-# Если используете nvm
+# With nvm
 nvm install
 nvm use
 
-# Если используете fnm (Fast Node Manager)
+# With fnm (Fast Node Manager)
 fnm install
 fnm use
 ```
 
-#### 2. Менеджер пакетов
+#### 2. Package manager
 
-Проект использует **pnpm** (рекомендуется) или **npm**.
+The project uses **pnpm** (recommended) or **npm**.
 
-**Установка pnpm:**
+**Install pnpm:**
 
 ```bash
 npm install -g pnpm
 ```
 
-**Проверка установки:**
+**Check the installation:**
 
 ```bash
 pnpm --version
@@ -77,11 +77,11 @@ pnpm --version
 
 #### 3. PostgreSQL
 
-Требуется база данных **PostgreSQL 12 или выше**.
+**PostgreSQL 12 or later** is required.
 
-**Установка PostgreSQL:**
+**Install PostgreSQL:**
 
-- **Windows**: Скачайте установщик с [официального сайта](https://www.postgresql.org/download/windows/)
+- **Windows**: download the installer from the [official website](https://www.postgresql.org/download/windows/)
 - **macOS**:
   ```bash
   brew install postgresql@14
@@ -95,73 +95,67 @@ pnpm --version
   sudo systemctl enable postgresql
   ```
 
-**Создание базы данных:**
+**Create the database:**
 
-После установки PostgreSQL создайте базу данных для проекта:
+After installing PostgreSQL, create a database for the project:
 
 ```bash
-# Войдите в PostgreSQL
+# Open PostgreSQL
 psql -U postgres
 
-# Создайте базу данных
+# Create the database
 CREATE DATABASE buildplanner;
 
-# Создайте пользователя (опционально)
+# Create a user (optional)
 CREATE USER buildplanner_user WITH PASSWORD 'your_password';
 GRANT ALL PRIVILEGES ON DATABASE buildplanner TO buildplanner_user;
 
-# Выйдите из psql
+# Exit psql
 \q
 ```
 
-#### 4. Git (опционально)
+#### 4. Git (optional)
 
-Для клонирования репозитория:
+To clone the repository:
 
 ```bash
 git --version
 ```
 
-### Пошаговая инструкция по установке
+### Step-by-step setup
 
-#### Шаг 1: Клонирование репозитория
+#### Step 1: Clone the repository
 
 ```bash
 git clone <repository-url>
 cd buildplanner
 ```
 
-Или если у вас уже есть проект, перейдите в директорию проекта:
+#### Step 2: Install dependencies
 
-```bash
-cd C:\work\rest\voronka\buildplanner
-```
-
-#### Шаг 2: Установка зависимостей
-
-**С использованием pnpm (рекомендуется):**
+**With pnpm (recommended):**
 
 ```bash
 pnpm install
 ```
 
-**С использованием npm:**
+**With npm:**
 
 ```bash
 npm install
 ```
 
-Этот процесс может занять несколько минут, так как устанавливаются все необходимые зависимости, включая:
+This may take a few minutes, since it installs all required dependencies, including:
 
-- Next.js и React
+- Next.js and React
 - Prisma ORM
-- Three.js для 3D визуализации
-- NextAuth для аутентификации
-- И другие зависимости проекта
+- Three.js for 3D visualization
+- NextAuth for authentication
+- Other project dependencies
 
-#### Шаг 3: Настройка переменных окружения
+#### Step 3: Configure environment variables
 
-Создайте файл `.env` в корне проекта на основе примера:
+Create a `.env` file in the project root from the example:
 
 ```bash
 # Windows (PowerShell)
@@ -171,345 +165,345 @@ Copy-Item .env.example .env
 cp .env.example .env
 ```
 
-Откройте файл `.env` и настройте следующие переменные:
+Open `.env` and set the following variables:
 
 ```env
 # Database
-# Замените на ваши реальные данные подключения к PostgreSQL
+# Replace with your actual PostgreSQL connection details
 DATABASE_URL="postgresql://postgres:password@localhost:5432/buildplanner?schema=public"
 
 # NextAuth
-# Сгенерируйте секретный ключ (минимум 32 символа)
+# Generate a secret key (at least 32 characters)
 # Windows (PowerShell):
 # [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
 # Linux/Mac:
 # openssl rand -base64 32
 NEXTAUTH_SECRET="your-secret-key-min-32-characters-long"
 
-# URL приложения
+# App URL
 NEXTAUTH_URL="http://localhost:3000"
 
-# Yandex Cloud API (опционально, для AI-ассистента)
-# Получить можно по ссылке: https://yandex.cloud/ru/docs/iam/concepts/authorization/api-key
+# Yandex Cloud API (optional, for the AI assistant)
+# Get a key here: https://yandex.cloud/en/docs/iam/concepts/authorization/api-key
 YANDEX_CLOUD_API_KEY="your-api-key-here"
-YANDEX_CLOUD_PROJECT_ID="b1gqkhrllleglkvashd3"
-YANDEX_CLOUD_AGENT_ID="fvtj2snqf0ane0lg8rqf"
+YANDEX_CLOUD_PROJECT_ID="your-project-id"
+YANDEX_CLOUD_AGENT_ID="your-agent-id"
 ```
 
-**Важно:**
+**Important:**
 
-- Замените `postgres:password` на ваши реальные учетные данные PostgreSQL
-- Сгенерируйте уникальный `NEXTAUTH_SECRET` для безопасности
-- Если не используете AI-ассистент, переменные Yandex Cloud можно оставить пустыми
+- Replace `postgres:password` with your real PostgreSQL credentials
+- Generate a unique `NEXTAUTH_SECRET`
+- If you don't use the AI assistant, you can leave the Yandex Cloud variables empty
 
-#### Шаг 4: Настройка базы данных
+#### Step 4: Set up the database
 
-**Генерация Prisma Client:**
+**Generate the Prisma Client:**
 
 ```bash
 pnpm run db:generate
-# или
+# or
 npm run db:generate
 ```
 
-**Применение миграций базы данных:**
+**Apply the schema:**
 
 ```bash
 pnpm run db:push
-# или
+# or
 npm run db:push
 ```
 
-Эта команда создаст все необходимые таблицы в базе данных согласно схеме Prisma.
+This creates all tables defined in the Prisma schema.
 
-**Альтернативный способ (с миграциями):**
+**Alternative (with migrations):**
 
 ```bash
 pnpm run db:migrate
-# или
+# or
 npm run db:migrate
 ```
 
-#### Шаг 5: Запуск проекта
+#### Step 5: Run the project
 
-**Режим разработки (development):**
+**Development mode:**
 
 ```bash
 pnpm dev
-# или
+# or
 npm run dev
 ```
 
-Сервер запустится на `http://localhost:3000`
+The server starts at `http://localhost:3000`.
 
-**Проверка работы:**
+**Check that it works:**
 
-- Откройте браузер и перейдите по адресу: http://localhost:3000
-- Вы должны увидеть главную страницу приложения
+- Open http://localhost:3000 in your browser
+- You should see the app's home page
 
-### Дополнительные команды
+### More commands
 
-#### Запуск в production режиме
+#### Production mode
 
 ```bash
-# Сборка проекта
+# Build
 pnpm build
-# или
+# or
 npm run build
 
-# Запуск production сервера
+# Start the production server
 pnpm start
-# или
+# or
 npm run start
 ```
 
-#### Работа с базой данных
+#### Database
 
 ```bash
-# Открыть Prisma Studio (GUI для базы данных)
+# Open Prisma Studio (database GUI)
 pnpm db:studio
-# или
+# or
 npm run db:studio
 
-# Применить изменения схемы без миграций
+# Apply schema changes without migrations
 pnpm db:push
 
-# Создать новую миграцию
+# Create a new migration
 pnpm db:migrate
 ```
 
-#### Линтинг кода
+#### Linting
 
 ```bash
 pnpm lint
-# или
+# or
 npm run lint
 ```
 
-### Решение проблем
+### Troubleshooting
 
-#### Проблема: "Cannot find module" или ошибки импорта
+#### "Cannot find module" or import errors
 
-**Решение:**
+**Fix:**
 
 ```bash
-# Удалите node_modules и lock файлы
+# Remove node_modules and the lock file
 rm -rf node_modules pnpm-lock.yaml
-# или на Windows
+# or on Windows
 Remove-Item -Recurse -Force node_modules, pnpm-lock.yaml
 
-# Переустановите зависимости
+# Reinstall dependencies
 pnpm install
 ```
 
-#### Проблема: Ошибка подключения к базе данных
+#### Database connection error
 
-**Проверьте:**
+**Check that:**
 
-1. PostgreSQL запущен и работает
-2. Правильность данных в `DATABASE_URL` в файле `.env`
-3. База данных `buildplanner` создана
-4. Пользователь имеет права доступа к базе данных
+1. PostgreSQL is running
+2. `DATABASE_URL` in `.env` is correct
+3. The `buildplanner` database exists
+4. The user has access to the database
 
-**Проверка подключения:**
+**Test the connection:**
 
 ```bash
 psql -U postgres -d buildplanner
 ```
 
-#### Проблема: "Prisma Client not generated"
+#### "Prisma Client not generated"
 
-**Решение:**
+**Fix:**
 
 ```bash
 pnpm db:generate
 ```
 
-#### Проблема: Порт 3000 уже занят
+#### Port 3000 is already in use
 
-**Решение:**
-Измените порт в команде запуска:
+**Fix:**
+Change the port in the start command:
 
 ```bash
 pnpm dev -- -p 3001
 ```
 
-Или установите переменную окружения:
+Or set an environment variable:
 
 ```bash
 PORT=3001 pnpm dev
 ```
 
-#### Проблема: Ошибки TypeScript при сборке
+#### TypeScript errors during build
 
-**Решение:**
+**Fix:**
 
 ```bash
-# Очистите кэш Next.js
+# Clear the Next.js cache
 rm -rf .next
-# или на Windows
+# or on Windows
 Remove-Item -Recurse -Force .next
 
-# Пересоберите проект
+# Rebuild
 pnpm build
 ```
 
-## 📚 Использование
+## 📚 Usage
 
-### Основные страницы
+### Main pages
 
-- **Главная страница**: http://localhost:3000
-- **Регистрация**: http://localhost:3000/signup
-- **Вход**: http://localhost:3000/signin
-- **Дашборд**: http://localhost:3000/dashboard
-- **Редактор проекта**: http://localhost:3000/projects/[projectId]
+- **Home**: http://localhost:3000
+- **Sign up**: http://localhost:3000/signup
+- **Sign in**: http://localhost:3000/signin
+- **Dashboard**: http://localhost:3000/dashboard
+- **Project editor**: http://localhost:3000/projects/[projectId]
 
-### Горячие клавиши
+### Keyboard shortcuts
 
-- `V` - Инструмент выделения
-- `W` - Рисование стен
-- `D` - Добавление дверей
-- `Shift+W` - Добавление окон
-- `R` - Инструмент комнат
-- `F` - Инструмент мебели
-- `Ctrl+Z` / `Ctrl+Y` - Отменить/Повторить
-- `Delete` - Удалить выделенный объект
-- `Esc` - Снять выделение / Завершить рисование
-- `Space` - Переключение между 2D/3D видом
+- `V` - Select tool
+- `W` - Draw walls
+- `D` - Add doors
+- `Shift+W` - Add windows
+- `R` - Room tool
+- `F` - Furniture tool
+- `Ctrl+Z` / `Ctrl+Y` - Undo / Redo
+- `Delete` - Delete the selected object
+- `Esc` - Clear selection / finish drawing
+- `Space` - Toggle 2D/3D view
 
-### Навигация в редакторе
+### Editor navigation
 
-- **Колесо мыши** - Масштабирование
-- **Средняя кнопка мыши** или **Shift + ЛКМ** - Перемещение плана
-- **ЛКМ** - Выделение и взаимодействие с объектами
-- **ПКМ** - Контекстное меню
+- **Mouse wheel** - Zoom
+- **Middle mouse button** or **Shift + left click** - Pan the plan
+- **Left click** - Select and interact with objects
+- **Right click** - Context menu
 
-## 🛠️ Технологии
+## 🛠️ Tech stack
 
-- **Next.js 15.5.0** - React фреймворк с App Router
-- **React 18.3.1** - UI библиотека
-- **TypeScript 5.7.2** - Типизация
-- **Tailwind CSS 3.4.17** - Стилизация
-- **Prisma 6.1.0** - ORM для работы с базой данных
-- **PostgreSQL** - Реляционная база данных
-- **NextAuth 5.0.0-beta.25** - Аутентификация и авторизация
-- **Three.js 0.181.2** - 3D графика и визуализация
-- **@react-three/fiber** - React рендерер для Three.js
-- **@react-three/drei** - Полезные компоненты для Three.js
-- **Zustand 5.0.8** - Управление состоянием
-- **Radix UI** - Доступные UI компоненты
-- **Lucide React** - Иконки
+- **Next.js 15.5.0** - React framework with the App Router
+- **React 18.3.1** - UI library
+- **TypeScript 5.7.2** - Type safety
+- **Tailwind CSS 3.4.17** - Styling
+- **Prisma 6.1.0** - Database ORM
+- **PostgreSQL** - Relational database
+- **NextAuth 5.0.0-beta.25** - Authentication and authorization
+- **Three.js 0.181.2** - 3D graphics and visualization
+- **@react-three/fiber** - React renderer for Three.js
+- **@react-three/drei** - Helper components for Three.js
+- **Zustand 5.0.8** - State management
+- **Radix UI** - Accessible UI components
+- **Lucide React** - Icons
 
-## 📁 Структура проекта
+## 📁 Project structure
 
 ```
 buildplanner/
 ├── .github/
-│   └── workflows/          # CI/CD конфигурация
+│   └── workflows/          # CI/CD configuration
 ├── prisma/
-│   ├── migrations/         # Миграции базы данных
-│   └── schema.prisma       # Схема базы данных
+│   ├── migrations/         # Database migrations
+│   └── schema.prisma       # Database schema
 ├── public/
-│   ├── furniture/          # 3D модели мебели (GLB)
-│   ├── plans/              # Шаблоны планов
-│   └── textures/           # Текстуры для стен и полов
+│   ├── furniture/          # 3D furniture models (GLB)
+│   ├── plans/              # Plan templates
+│   └── textures/           # Wall and floor textures
 ├── src/
 │   ├── app/                # Next.js App Router
-│   │   ├── (auth)/         # Страницы авторизации
-│   │   ├── (dashboard)/    # Защищенные страницы
+│   │   ├── (auth)/         # Auth pages
+│   │   ├── (dashboard)/    # Protected pages
 │   │   ├── api/            # API routes
-│   │   └── layout.tsx      # Корневой layout
+│   │   └── layout.tsx      # Root layout
 │   ├── components/
-│   │   ├── editor2d/       # Компоненты 2D редактора
-│   │   ├── editor3d/       # Компоненты 3D визуализации
-│   │   ├── layout/         # Компоненты layout
-│   │   └── ui/             # Переиспользуемые UI компоненты
-│   ├── hooks/              # React хуки
+│   │   ├── editor2d/       # 2D editor components
+│   │   ├── editor3d/       # 3D view components
+│   │   ├── layout/         # Layout components
+│   │   └── ui/             # Reusable UI components
+│   ├── hooks/              # React hooks
 │   ├── lib/
-│   │   ├── editor/         # Логика редактора
-│   │   ├── services/       # Бизнес-логика
-│   │   └── utils/        # Утилиты
+│   │   ├── editor/         # Editor logic
+│   │   ├── services/       # Business logic
+│   │   └── utils/          # Utilities
 │   ├── store/              # State management (Zustand)
-│   └── types/              # TypeScript типы
-├── .env.example            # Пример файла переменных окружения
-├── next.config.mjs          # Конфигурация Next.js
-├── package.json             # Зависимости и скрипты
-├── tailwind.config.ts       # Конфигурация Tailwind CSS
-└── tsconfig.json            # Конфигурация TypeScript
+│   └── types/              # TypeScript types
+├── .env.example            # Example environment file
+├── next.config.mjs         # Next.js configuration
+├── package.json            # Dependencies and scripts
+├── tailwind.config.ts      # Tailwind CSS configuration
+└── tsconfig.json           # TypeScript configuration
 ```
 
-## 🐳 Docker (опционально)
+## 🐳 Docker (optional)
 
-Проект поддерживает запуск через Docker. Подробности в файле [DOCKER.md](./DOCKER.md).
+The project can run in Docker. See [DOCKER.md](./DOCKER.md) for details.
 
-## 🧪 Разработка
+## 🧪 Development
 
-### Добавление новых зависимостей
+### Adding dependencies
 
 ```bash
-# Production зависимости
+# Production dependencies
 pnpm add <package-name>
 
-# Development зависимости
+# Development dependencies
 pnpm add -D <package-name>
 ```
 
-### Работа с базой данных
+### Database
 
 ```bash
-# Открыть Prisma Studio
+# Open Prisma Studio
 pnpm db:studio
 
-# Создать новую миграцию после изменения schema.prisma
+# Create a new migration after changing schema.prisma
 pnpm db:migrate
 
-# Применить изменения без создания миграции
+# Apply changes without creating a migration
 pnpm db:push
 ```
 
-### Структура базы данных
+### Data model
 
-Основные модели:
+Main models:
 
-- `User` - Пользователи системы
-- `Project` - Проекты планировок
-- `PlanVersion` - Версии планов
-- `ChatMessage` - Сообщения AI-ассистента
-- `Document` - Документы проекта
+- `User` - App users
+- `Project` - Floor plan projects
+- `PlanVersion` - Plan versions
+- `ChatMessage` - AI assistant messages
+- `Document` - Project documents
 
-Подробная схема в файле `prisma/schema.prisma`.
+See `prisma/schema.prisma` for the full schema.
 
 ## 🎯 Roadmap
 
-- [x] Базовый функционал рисования стен
-- [x] Добавление дверей и окон
-- [x] Система слоёв
-- [x] Работа с фоновыми изображениями
-- [x] Горячие клавиши
-- [x] 3D визуализация
-- [x] Библиотека мебели
-- [x] Автосохранение
-- [x] AI-ассистент
-- [ ] Инструмент размеров
-- [ ] Экспорт в PNG/SVG/DXF/PDF
-- [ ] Совместное редактирование
-- [ ] Мобильная версия
+- [x] Basic wall drawing
+- [x] Doors and windows
+- [x] Layers
+- [x] Background images
+- [x] Keyboard shortcuts
+- [x] 3D view
+- [x] Furniture library
+- [x] Autosave
+- [x] AI assistant
+- [ ] Dimension tool
+- [ ] Export to PNG/SVG/DXF/PDF
+- [ ] Real-time collaboration
+- [ ] Mobile version
 
-## 🤝 Вклад в проект
+## 🤝 Contributing
 
-Приветствуются любые предложения и улучшения!
+Suggestions and improvements are welcome!
 
-1. Создайте форк проекта
-2. Создайте ветку для новой функции (`git checkout -b feature/amazing-feature`)
-3. Закоммитьте изменения (`git commit -m 'Add amazing feature'`)
-4. Запушьте в ветку (`git push origin feature/amazing-feature`)
-5. Откройте Pull Request
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📄 Лицензия
+## 📄 License
 
 MIT
 
-## 🔗 Полезные ссылки
+## 🔗 Useful links
 
 - [Next.js Documentation](https://nextjs.org/docs)
 - [React Documentation](https://react.dev)
@@ -519,10 +513,10 @@ MIT
 - [Tailwind CSS](https://tailwindcss.com/docs)
 - [NextAuth.js Documentation](https://next-auth.js.org)
 
-## 📞 Поддержка
+## 📞 Support
 
-Если у вас возникли проблемы с установкой или запуском проекта, создайте issue в репозитории проекта.
+If you run into problems installing or running the project, please open an issue in this repository.
 
 ---
 
-**Приятной работы с BuildPlanner! 🚀**
+**Enjoy working with BuildPlanner! 🚀**
